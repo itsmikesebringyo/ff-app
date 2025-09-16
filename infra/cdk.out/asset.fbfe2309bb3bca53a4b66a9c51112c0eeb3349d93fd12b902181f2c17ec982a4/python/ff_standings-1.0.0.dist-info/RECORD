@@ -1,0 +1,17 @@
+ff_standings-1.0.0.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
+ff_standings-1.0.0.dist-info/METADATA,sha256=7kKzEL18ZnSBWAzNLdENn0sA7j5x9EksSMdgFL_ToEw,424
+ff_standings-1.0.0.dist-info/RECORD,,
+ff_standings-1.0.0.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+ff_standings-1.0.0.dist-info/WHEEL,sha256=_zCd3N1l69ArxyTb8rzEoP9TpbYXkqRFSNOD5OuxnTs,91
+ff_standings-1.0.0.dist-info/direct_url.json,sha256=FsxaJwSKIj3ms-W29S2XjPb5n7zQPLU9r1Chvnrem4Y,87
+ff_standings-1.0.0.dist-info/top_level.txt,sha256=AHwjGAc1t6LzXfi0K6VT4vPmvczZunBxfMjw5XkPcfk,13
+ff_standings/__init__.py,sha256=rTeTqtQUcWhLd6oA0eN9oqcpLXpta0vK5nnDTZ5bcN0,300
+ff_standings/__pycache__/__init__.cpython-313.pyc,,
+ff_standings/__pycache__/calculator.cpython-313.pyc,,
+ff_standings/__pycache__/data_cache.cpython-313.pyc,,
+ff_standings/__pycache__/service.cpython-313.pyc,,
+ff_standings/__pycache__/storage.cpython-313.pyc,,
+ff_standings/calculator.py,sha256=lOCs8Zl60WRmlSO2_CxtpoCW4shIKlHbHzJ7MeV4vfs,4909
+ff_standings/data_cache.py,sha256=61At3OU3feg2riHt046DtGeF5rFN5v8Eg151bfThuyw,5408
+ff_standings/service.py,sha256=n9LNDegSA3PYaK7_uxf1XCTXNypHH2CO-osU4i0y16w,3881
+ff_standings/storage.py,sha256=lQ4UuBbtsH6Bn6NPN_-2gJArzVywHyU_VlyS_YtQn8Y,4941
