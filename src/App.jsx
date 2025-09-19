@@ -360,7 +360,7 @@ function App() {
           </TabsList>
           
           <TabsContent value="weekly" className="mt-6">
-            <WeeklyStandings selectedTeam={selectedTeam} />
+            <WeeklyStandings selectedTeam={selectedTeam} onTeamSelect={setSelectedTeam} />
           </TabsContent>
           
           <TabsContent value="overall" className="mt-6">

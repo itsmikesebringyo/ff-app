@@ -17,7 +17,7 @@ import { ChevronDown } from "lucide-react"
 import WeeklyStandingsChart from './WeeklyStandingsChart'
 import { apiCall, apiConfig } from '../config/api'
 
-export default function WeeklyStandings({ selectedTeam }) {
+export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
   const [openItems, setOpenItems] = useState([])
   const [selectedWeek, setSelectedWeek] = useState("")
   const [weeklyStandings, setWeeklyStandings] = useState([])
@@ -257,7 +257,7 @@ export default function WeeklyStandings({ selectedTeam }) {
         </CardContent>
       </Card>
       
-      <WeeklyStandingsChart selectedTeam={selectedTeam} />
+      <WeeklyStandingsChart selectedTeam={selectedTeam} onTeamSelect={onTeamSelect} />
     </div>
   )
 }
