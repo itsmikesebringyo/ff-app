@@ -13,9 +13,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'Fantasy Football vs Everyone',
-        short_name: 'FF vs Everyone',
-        description: 'Fantasy Football custom scoring tracker',
+        name: 'Madtown\'s Finest Fantasy Football League',
+        short_name: 'Madtown\'s Finest',
+        description: 'Madtown\'s Finest Fantasy Football League - Established 2012. Track standings with our unique \'vs everyone\' scoring format.',
         theme_color: '#000000',
         background_color: '#ffffff',
         display: 'standalone',

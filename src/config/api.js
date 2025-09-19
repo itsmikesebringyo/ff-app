@@ -21,41 +21,108 @@ const getCacheKey = (url) => `api_cache_${btoa(url)}`;
 const POLLING_CACHE_DURATION = 9 * 1000; // 9 seconds when polling is active
 const IDLE_CACHE_DURATION = 15 * 60 * 1000; // 15 minutes when polling is inactive
 
+// Polling status cache configuration
+const POLLING_STATUS_CACHE_KEY = 'ff_polling_status_cache';
+const POLLING_STATUS_CACHE_DURATION = 60 * 60 * 1000; // Cache for 1 hour
+
+// In-flight request tracking for barrier synchronization
+let pollingStatusPromise = null;
+
 // Check if polling is currently active (with fallback for reliability)
 const isPollingActive = async () => {
-  try {
-    // Try to get polling status from API
-    const response = await fetch(`${API_BASE_URL}/polling/status`, {
-      method: 'GET',
-      timeout: 3000 // Quick timeout for status check
-    });
-    if (response.ok) {
-      const data = await response.json();
-      return data.enabled === true;
+  // If there's already a request in flight, return that promise
+  if (pollingStatusPromise) {
+    return pollingStatusPromise;
+  }
+  // Create a new promise for this request
+  pollingStatusPromise = (async () => {
+    const now = Date.now();
+    
+    // Check localStorage cache first
+    try {
+      const cached = localStorage.getItem(POLLING_STATUS_CACHE_KEY);
+      if (cached) {
+        const { value, timestamp } = JSON.parse(cached);
+        if ((now - timestamp) < POLLING_STATUS_CACHE_DURATION) {
+          return value;
+        }
+      }
+    } catch (error) {
+      console.warn('Error reading polling status cache:', error);
     }
+
+    try {
+      // Try to get polling status from API
+      const response = await fetch(apiConfig.endpoints.pollingStatus, {
+        method: 'GET',
+        signal: AbortSignal.timeout(3000)
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const isActive = data.enabled === true;
+        
+        // Cache the result in localStorage
+        localStorage.setItem(POLLING_STATUS_CACHE_KEY, JSON.stringify({
+          value: isActive,
+          timestamp: now
+        }));
+        
+        return isActive;
+      }
+    } catch {
+      console.log('Could not fetch polling status, using fallback');
+    }
+    
+    // Fallback: assume polling is active during typical game hours
+    // This prevents cache issues if polling status API is unreliable
+    const nowDate = new Date();
+    const hour = nowDate.getHours();
+    const day = nowDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    
+    // Assume polling is active during NFL game times:
+    // Sunday: 10 AM - 11 PM (games typically run 1 PM - 8 PM ET, but data updates before/after)
+    // Monday/Thursday: 6 PM - 11 PM (primetime games)
+    // Saturday: 4 PM - 11 PM (playoff games)
+    let fallbackValue = false;
+    if (day === 0) { // Sunday
+      fallbackValue = hour >= 10 && hour <= 23;
+    } else if (day === 1 || day === 4) { // Monday/Thursday
+      fallbackValue = hour >= 18 && hour <= 23;
+    } else if (day === 6) { // Saturday (playoffs)
+      fallbackValue = hour >= 16 && hour <= 23;
+    }
+    
+    // Cache the fallback value in localStorage too
+    try {
+      localStorage.setItem(POLLING_STATUS_CACHE_KEY, JSON.stringify({
+        value: fallbackValue,
+        timestamp: now
+      }));
+    } catch (error) {
+      console.warn('Error saving polling status cache:', error);
+    }
+    
+    return fallbackValue;
+  })()
+    .finally(() => {
+      // Clear the promise after completion to allow future requests
+      pollingStatusPromise = null;
+    });
+  
+  return pollingStatusPromise;
+};
+
+// Function to clear polling status cache (useful when manually toggling)
+export const clearPollingStatusCache = () => {
+  // Clear any in-flight promise
+  pollingStatusPromise = null;
+  
+  try {
+    localStorage.removeItem(POLLING_STATUS_CACHE_KEY);
   } catch (error) {
-    console.log('Could not fetch polling status, using fallback');
+    console.warn('Error clearing polling status cache:', error);
   }
-  
-  // Fallback: assume polling is active during typical game hours
-  // This prevents cache issues if polling status API is unreliable
-  const now = new Date();
-  const hour = now.getHours();
-  const day = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
-  
-  // Assume polling is active during NFL game times:
-  // Sunday: 10 AM - 11 PM (games typically run 1 PM - 8 PM ET, but data updates before/after)
-  // Monday/Thursday: 6 PM - 11 PM (primetime games)
-  // Saturday: 4 PM - 11 PM (playoff games)
-  if (day === 0) { // Sunday
-    return hour >= 10 && hour <= 23;
-  } else if (day === 1 || day === 4) { // Monday/Thursday
-    return hour >= 18 && hour <= 23;
-  } else if (day === 6) { // Saturday (playoffs)
-    return hour >= 16 && hour <= 23;
-  }
-  
-  return false; // Default to inactive during other times
 };
 
 const getCachedData = async (url) => {
