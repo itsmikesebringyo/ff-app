@@ -12,6 +12,8 @@ export const apiConfig = {
     calculatePlayoffs: `${API_BASE_URL}/calculate-playoffs`,
     syncHistorical: `${API_BASE_URL}/sync-historical`,
     fetchPlayers: `${API_BASE_URL}/players`,
+    projections: `${API_BASE_URL}/projections`,
+    teamProjections: `${API_BASE_URL}/team-projections`,
     adminValidate: `${API_BASE_URL}/admin/validate`
   }
 };

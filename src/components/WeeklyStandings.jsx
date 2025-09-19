@@ -15,118 +15,64 @@ import {
 } from "@/components/ui/select"
 import { ChevronDown } from "lucide-react"
 import WeeklyStandingsChart from './WeeklyStandingsChart'
-import { apiCall, apiConfig } from '../config/api'
+import { useSleeperPlayerData, useSleeperNFLState } from '../hooks/useSleeperTest'
+import { useMemo } from 'react'
 
 export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
   const [openItems, setOpenItems] = useState([])
-  const [selectedWeek, setSelectedWeek] = useState("")
   const [weeklyStandings, setWeeklyStandings] = useState([])
-  const [availableWeeks, setAvailableWeeks] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  // Discover available weeks and fetch standings
+  // Get current NFL week
+  const { data: nflState } = useSleeperNFLState()
+  const currentWeek = nflState?.week || 1
+  const availableWeeks = useMemo(() => Array.from({ length: currentWeek }).map((_, i) => i+1 ).reverse(), [currentWeek])
+  const [selectedWeek, setSelectedWeek] = useState(`${currentWeek}`)
+  
+  // Fetch player data with actual and projected points using test hook
+  const { data: playerData } = useSleeperPlayerData(selectedWeek || currentWeek)
+
+  // Update weekly standings when Sleeper data changes
   useEffect(() => {
-    const discoverAvailableWeeks = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        
-        // PWA-optimized: Check weeks sequentially with intelligent caching
-        // Start from most recent weeks and work backwards for better UX
-        const availableWeekNumbers = []
-        const weeksToCheck = Array.from({ length: 18 }, (_, i) => 18 - i) // Check 18 down to 1
-        
-        for (const week of weeksToCheck) {
-          try {
-            const response = await apiCall(`${apiConfig.endpoints.weekly}?week=${week}&season=2025`, {
-              timeout: 5000, // Shorter timeout for discovery
-              maxRetries: 1,  // Fewer retries for discovery
-              useCache: true  // Use PWA caching for discovery
-            })
-            if (response.standings && response.standings.length > 0) {
-              availableWeekNumbers.unshift(week) // Add to beginning to maintain order
-            }
-          } catch (err) {
-            console.log(`Week ${week} not available:`, err.message)
-            // Continue checking other weeks
-          }
-        }
-        
-        // If no weeks found, try a few more with different approach
-        if (availableWeekNumbers.length === 0) {
-          console.log('No weeks found in reverse order, trying forward order...')
-          for (let week = 1; week <= 5; week++) { // Only check first 5 weeks as fallback
-            try {
-              const response = await apiCall(`${apiConfig.endpoints.weekly}?week=${week}&season=2025`, {
-                timeout: 8000,
-                maxRetries: 2,
-                useCache: true  // Use PWA caching for fallback
-              })
-              if (response.standings && response.standings.length > 0) {
-                availableWeekNumbers.push(week)
-                break // Found at least one week, that's enough
-              }
-            } catch (err) {
-              console.log(`Fallback week ${week} not available:`, err.message)
-            }
-          }
-        }
-        
-        setAvailableWeeks(availableWeekNumbers)
-        
-        // Set default to most recent week if not already selected
-        if (!selectedWeek && availableWeekNumbers.length > 0) {
-          const mostRecentWeek = Math.max(...availableWeekNumbers).toString()
-          setSelectedWeek(mostRecentWeek)
-        }
-        
-      } catch (err) {
-        console.error('Error discovering available weeks:', err)
-        setError('Failed to load available weeks')
-      } finally {
-        setLoading(false)
-      }
+    if (playerData?.teams) {
+      // Create standings from Sleeper test hook data
+      const teams = Object.values(playerData.teams)
+      
+      // Calculate total points for each team
+      teams.forEach(team => {
+        team.totalPoints = team.players.reduce((sum, player) => sum + (player.points || 0), 0)
+      })
+      
+      // Sort by points descending
+      teams.sort((a, b) => b.totalPoints - a.totalPoints)
+      
+      // Add rankings and vs everyone records
+      teams.forEach((team, index) => {
+        team.rank = index + 1
+        team.wins = teams.length - index - 1
+        team.losses = index
+        team.record = `${team.wins}-${team.losses}`
+      })
+      
+      // Transform to expected format
+      const transformedData = teams.map(team => ({
+        id: team.team_id,
+        rank: team.rank,
+        teamName: team.team_name,
+        points: team.totalPoints.toFixed(2),
+        record: team.record,
+        roster: team.players // Use Sleeper roster data
+      }))
+      
+      setWeeklyStandings(transformedData)
+      setLoading(false)
+      setError(null)
+    } else if (selectedWeek && !playerData) {
+      setLoading(true)
+      setError(null)
     }
-
-    discoverAvailableWeeks()
-  }, [])
-
-  // Fetch weekly standings data when week is selected
-  useEffect(() => {
-    if (!selectedWeek) return
-    
-    const fetchWeeklyStandings = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        const response = await apiCall(`${apiConfig.endpoints.weekly}?week=${selectedWeek}&season=2025`, {
-          timeout: 15000, // Longer timeout for actual data fetch
-          maxRetries: 3,  // More retries for important data
-          useCache: true  // Use PWA caching for data
-        })
-        
-        // Transform API data to match expected format
-        const transformedData = response.standings.map(team => ({
-          id: team.team_id,
-          rank: team.rank,
-          teamName: team.team_name,
-          points: parseFloat(team.points || 0).toFixed(2),
-          record: `${team.wins ?? team.weekly_wins ?? 0}-${team.losses ?? team.weekly_losses ?? 0}`,
-          roster: team.roster || [] // API should provide roster data
-        }))
-        
-        setWeeklyStandings(transformedData)
-      } catch (err) {
-        console.error('Error fetching weekly standings:', err)
-        setError('Failed to load weekly standings')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchWeeklyStandings()
-  }, [selectedWeek])
+  }, [playerData, selectedWeek])
 
   // Highlight selected team with background
   const getHighlightStyle = (teamName) => {
@@ -229,17 +175,22 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
                       <div className="bg-muted rounded-lg p-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                           {team.roster && team.roster.length > 0 ? (
-                            team.roster.map((player, index) => (
-                              <div key={index} className="flex justify-between items-center py-1">
-                                <span className="text-xs">
-                                  <span className="font-medium text-muted-foreground w-8 inline-block">
-                                    {player.position}
+                            team.roster.map((player, index) => {
+                              return (
+                                <div key={index} className="flex justify-between items-center py-1">
+                                  <span className="text-xs">
+                                    <span className="font-medium text-muted-foreground w-8 inline-block">
+                                      {player.position}
+                                    </span>
+                                    {player.player}
                                   </span>
-                                  {player.player}
-                                </span>
-                                <span className="text-xs font-medium">{parseFloat(player.points || 0).toFixed(2)}</span>
-                              </div>
-                            ))
+                                  <div className="text-xs font-medium">
+                                    {parseFloat(player.points || 0).toFixed(2)}
+                                    <span className="text-gray-400">/{player.projected_points.toFixed(1)}</span>
+                                  </div>
+                                </div>
+                              )
+                            })
                           ) : (
                             <div className="text-center text-muted-foreground text-sm py-4">
                               Roster data not available
