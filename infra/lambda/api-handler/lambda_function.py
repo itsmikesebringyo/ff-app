@@ -26,6 +26,8 @@ def lambda_handler(event, context):
     - POST /polling/toggle - Start/stop polling service
     - POST /calculate-playoffs - Run Monte Carlo simulation
     - POST /sync-historical - Backfill historical data
+    - GET /projections - Get player projections for a given week
+    - GET /team-projections - Get projections for a specific team's players
     """
     
     path = event.get('path', '')
@@ -94,6 +96,14 @@ def lambda_handler(event, context):
                     'body': json.dumps({'error': 'Admin access required'})
                 }
             return handle_fetch_players()
+        
+        # Team projections endpoint
+        elif 'team-projections' in path and http_method == 'GET':
+            return handle_team_projections(weekly_standings_table, query_params)
+        
+        # Projections endpoint
+        elif 'projections' in path and http_method == 'GET':
+            return handle_projections(league_data_table, query_params)
         
         # Admin validation endpoint
         elif 'admin/validate' in path and http_method == 'POST':
@@ -395,6 +405,181 @@ def handle_admin_validate(event):
             'statusCode': 401,
             'headers': get_cors_headers(),
             'body': json.dumps({'error': 'Invalid admin key'})
+        }
+
+def handle_team_projections(weekly_standings_table, query_params):
+    """Get projections for a specific team's players"""
+    try:
+        # Extract parameters
+        team_id = query_params.get('team_id')
+        season = query_params.get('season', '2025')
+        week = query_params.get('week')
+        season_type = query_params.get('season_type', 'regular')
+        
+        if not team_id or not week:
+            return {
+                'statusCode': 400,
+                'headers': get_cors_headers(),
+                'body': json.dumps({'error': 'Missing required parameters: team_id and week'})
+            }
+        
+        # First, get the team's roster from weekly standings
+        logger.info(f"Fetching roster for team {team_id} in week {week}")
+        
+        response = weekly_standings_table.query(
+            KeyConditionExpression=boto3.dynamodb.conditions.Key('season_week').eq(f"{season}_{week}")
+        )
+        
+        # Find the specific team
+        team_data = None
+        for item in response.get('Items', []):
+            if item.get('team_id') == team_id:
+                team_data = item
+                break
+        
+        if not team_data:
+            return {
+                'statusCode': 404,
+                'headers': get_cors_headers(),
+                'body': json.dumps({'error': f'Team {team_id} not found in week {week}'})
+            }
+        
+        # Extract player IDs from the roster
+        roster = team_data.get('roster', [])
+        player_ids = [player.get('player_id') for player in roster if player.get('player_id')]
+        
+        if not player_ids:
+            return {
+                'statusCode': 200,
+                'headers': get_cors_headers(),
+                'body': json.dumps({
+                    'team_id': team_id,
+                    'team_name': team_data.get('team_name', ''),
+                    'week': int(week),
+                    'season': season,
+                    'projections': []
+                })
+            }
+        
+        # Now fetch all projections for the week
+        logger.info(f"Fetching projections from Sleeper API for season {season}, week {week}")
+        
+        positions = ['QB', 'RB', 'WR', 'TE', 'FLEX', 'DST']
+        position_params = '&'.join([f'position[]={pos}' for pos in positions])
+        url = f"https://api.sleeper.app/v1/projections/nfl/{season}/{week}?season_type={season_type}&{position_params}&order_by=ppr"
+        
+        response = requests.get(url, timeout=15)
+        response.raise_for_status()
+        all_projections = response.json()
+        
+        # Filter projections to only include players on this team
+        team_projections = [proj for proj in all_projections if proj.get('player_id') in player_ids]
+        
+        # Combine roster info with projections
+        enriched_projections = []
+        for player in roster:
+            player_id = player.get('player_id')
+            if player_id:
+                # Find the projection for this player
+                projection = next((proj for proj in team_projections if proj.get('player_id') == player_id), None)
+                
+                if projection:
+                    # Merge roster info with projection
+                    enriched_projection = {
+                        **projection,
+                        'roster_position': player.get('position'),
+                        'player_name': player.get('player'),
+                        'actual_points': player.get('points', 0)
+                    }
+                    enriched_projections.append(enriched_projection)
+        
+        logger.info(f"Found {len(enriched_projections)} projections for team {team_id}")
+        
+        return {
+            'statusCode': 200,
+            'headers': get_cors_headers(),
+            'body': json.dumps({
+                'team_id': team_id,
+                'team_name': team_data.get('team_name', ''),
+                'week': int(week),
+                'season': season,
+                'season_type': season_type,
+                'player_count': len(roster),
+                'projections_count': len(enriched_projections),
+                'projections': enriched_projections
+            })
+        }
+        
+    except requests.RequestException as e:
+        logger.error(f"Failed to fetch projections from Sleeper API: {e}")
+        return {
+            'statusCode': 500,
+            'headers': get_cors_headers(),
+            'body': json.dumps({'error': f'Failed to fetch projections: {str(e)}'})
+        }
+    except Exception as e:
+        logger.error(f"Error handling team projections request: {e}")
+        return {
+            'statusCode': 500,
+            'headers': get_cors_headers(),
+            'body': json.dumps({'error': 'Internal server error'})
+        }
+
+def handle_projections(league_data_table, query_params):
+    """Get player projections for a given season and week"""
+    try:
+        # Extract parameters
+        season = query_params.get('season', '2025')
+        week = query_params.get('week')
+        season_type = query_params.get('season_type', 'regular')
+        
+        if not week:
+            return {
+                'statusCode': 400,
+                'headers': get_cors_headers(),
+                'body': json.dumps({'error': 'Missing required parameter: week'})
+            }
+        
+        # Fetch data from Sleeper API
+        logger.info(f"Fetching projections from Sleeper API for season {season}, week {week}")
+        
+        # Positions we care about (no kickers per league rules)
+        positions = ['QB', 'RB', 'WR', 'TE', 'FLEX', 'DST']
+        position_params = '&'.join([f'position[]={pos}' for pos in positions])
+        
+        url = f"https://api.sleeper.app/v1/projections/nfl/{season}/{week}?season_type={season_type}&{position_params}&order_by=ppr"
+        
+        response = requests.get(url, timeout=15)
+        response.raise_for_status()
+        projections = response.json()
+        
+        logger.info(f"Fetched {len(projections)} player projections")
+        
+        return {
+            'statusCode': 200,
+            'headers': get_cors_headers(),
+            'body': json.dumps({
+                'season': season,
+                'week': int(week),
+                'season_type': season_type,
+                'count': len(projections),
+                'projections': projections
+            })
+        }
+        
+    except requests.RequestException as e:
+        logger.error(f"Failed to fetch projections from Sleeper API: {e}")
+        return {
+            'statusCode': 500,
+            'headers': get_cors_headers(),
+            'body': json.dumps({'error': f'Failed to fetch projections: {str(e)}'})
+        }
+    except Exception as e:
+        logger.error(f"Error handling projections request: {e}")
+        return {
+            'statusCode': 500,
+            'headers': get_cors_headers(),
+            'body': json.dumps({'error': 'Internal server error'})
         }
 
 def handle_fetch_players():
