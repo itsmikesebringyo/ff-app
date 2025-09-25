@@ -16,7 +16,7 @@ import { Switch } from "@/components/ui/switch"
 import { Moon, Sun, Menu } from "lucide-react"
 import WeeklyStandings from './components/WeeklyStandings'
 import OverallStandings from './components/OverallStandings'
-import { apiConfig, adminApiCall } from './config/api'
+import { apiConfig, adminApiCall, clearPollingStatusCache } from './config/api'
 import { useTeams } from './hooks/useTeams'
 import { useNetworkStatus } from './hooks/useNetworkStatus'
 
@@ -223,6 +223,7 @@ function App() {
                           method: 'POST'
                         })
                         setIsPolling(response.enabled)
+                        clearPollingStatusCache() // Clear the cache when toggling
                         console.log('Polling toggled:', response.message)
                       } catch (error) {
                         console.error('Failed to toggle polling:', error)
@@ -360,7 +361,7 @@ function App() {
           </TabsList>
           
           <TabsContent value="weekly" className="mt-6">
-            <WeeklyStandings selectedTeam={selectedTeam} />
+            <WeeklyStandings selectedTeam={selectedTeam} onTeamSelect={setSelectedTeam} />
           </TabsContent>
           
           <TabsContent value="overall" className="mt-6">

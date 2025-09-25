@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import BaseChart from './charts/BaseChart'
 import { apiCall, apiConfig } from '../config/api'
 
-export default function WeeklyStandingsChart({ selectedTeam }) {
+export default function WeeklyStandingsChart({ selectedTeam, onTeamSelect }) {
   const fetchWeeklyChartData = useCallback(async () => {
     // Fetch data for weeks 1-18 (current NFL season)
     const weeks = Array.from({ length: 18 }, (_, i) => i + 1)
@@ -54,6 +54,7 @@ export default function WeeklyStandingsChart({ selectedTeam }) {
       title="Weekly Performance Trends"
       fetchDataFn={fetchWeeklyChartData}
       selectedTeam={selectedTeam}
+      onTeamSelect={onTeamSelect}
     />
   )
 }
