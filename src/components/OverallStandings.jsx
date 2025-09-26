@@ -1,47 +1,9 @@
-import { useState, useEffect } from 'react'
 import { Card, CardContent } from "@/components/ui/card"
 import OverallStandingsChart from './OverallStandingsChart'
-import { apiCall, apiConfig } from '../config/api'
+import { useOverallStandings } from '../hooks/useOverallStandings'
 
 export default function OverallStandings({ selectedTeam }) {
-  const [overallStandings, setOverallStandings] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-
-  // Fetch overall standings data
-  useEffect(() => {
-    const fetchOverallStandings = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        const response = await apiCall(`${apiConfig.endpoints.overall}?season=2025`, {
-          timeout: 15000, // Longer timeout for important data
-          maxRetries: 3,  // More retries for important data
-          useCache: true  // Use PWA caching for data
-        })
-        
-        // Transform API data to match expected format
-        const transformedData = response.standings.map(team => ({
-          id: team.team_id,
-          rank: team.current_rank,
-          teamName: team.team_name,
-          overallRecord: `${team.total_wins || 0}-${team.total_losses || 0}`,
-          earnings: team.earnings ? `$${team.earnings}` : '$0',
-          totalPoints: parseFloat(team.total_points || 0).toFixed(2),
-          playoffPct: team.playoff_percentage ? `${team.playoff_percentage}%` : '0.0%',
-        }))
-        
-        setOverallStandings(transformedData)
-      } catch (err) {
-        console.error('Error fetching overall standings:', err)
-        setError('Failed to load overall standings')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchOverallStandings()
-  }, [])
+  const { data: overallStandings = [], isLoading: loading, error } = useOverallStandings()
 
   // Highlight selected team with background
   const getHighlightStyle = (teamName) => {
@@ -79,7 +41,7 @@ export default function OverallStandings({ selectedTeam }) {
           {error && (
             <div className="text-center py-8 text-red-500">
               <div className="flex flex-col items-center gap-2">
-                <span className="font-medium">{error}</span>
+                <span className="font-medium">{error?.message || 'Failed to load data'}</span>
                 <button 
                   onClick={() => window.location.reload()} 
                   className="text-sm text-blue-500 hover:text-blue-700 underline"
