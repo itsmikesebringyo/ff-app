@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import OverallStandingsChart from './OverallStandingsChart'
 import { useOverallStandings } from '../hooks/useOverallStandings'
 
-export default function OverallStandings({ selectedTeam }) {
+export default function OverallStandings({ selectedTeam, onTeamSelect }) {
   const { data: overallStandings = [], isLoading: loading, error } = useOverallStandings()
 
   // Highlight selected team with background
@@ -80,7 +80,7 @@ export default function OverallStandings({ selectedTeam }) {
         </CardContent>
       </Card>
       
-      <OverallStandingsChart selectedTeam={selectedTeam} />
+      <OverallStandingsChart selectedTeam={selectedTeam} onTeamSelect={onTeamSelect} />
     </div>
   )
 }

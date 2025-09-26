@@ -369,7 +369,7 @@ function App() {
           </TabsContent>
           
           <TabsContent value="overall" className="mt-6">
-            <OverallStandings selectedTeam={selectedTeam} />
+            <OverallStandings selectedTeam={selectedTeam} onTeamSelect={setSelectedTeam} />
           </TabsContent>
           </Tabs>
       </div>

@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import BaseChart from './charts/BaseChart'
 import { apiCall, apiConfig } from '../config/api'
 
-export default function OverallStandingsChart({ selectedTeam }) {
+export default function OverallStandingsChart({ selectedTeam, onTeamSelect }) {
   const fetchOverallChartData = useCallback(async () => {
     // Fetch data for weeks 1-18 (current NFL season)
     const weeks = Array.from({ length: 18 }, (_, i) => i + 1)
@@ -89,6 +89,7 @@ export default function OverallStandingsChart({ selectedTeam }) {
       title="Season-Long Trends"
       fetchDataFn={fetchOverallChartData}
       selectedTeam={selectedTeam}
+      onTeamSelect={onTeamSelect}
     />
   )
 }
