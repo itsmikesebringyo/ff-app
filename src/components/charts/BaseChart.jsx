@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Text } from "recharts"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts"
+import { useIsMobile } from '@/hooks/useIsMobile'
+import { Button } from "@/components/ui/button"
 
 const buildChartConfig = (teamNames) => {
   const config = {}
@@ -13,65 +15,6 @@ const buildChartConfig = (teamNames) => {
   return config
 }
 
-// Helper function to get shortened team name (first word only)
-const getShortTeamName = (fullName) => {
-  if (!fullName) return ''
-  return fullName.split(' ')[0]
-}
-
-// Custom tick component for left side labels
-const LeftAxisTick = ({ x, y, payload, firstWeekRankMap, selectedTeam, onTeamClick }) => {
-  const teamName = firstWeekRankMap[payload.value]
-  
-  if (!teamName) return null
-  
-  const shortName = getShortTeamName(teamName)
-  const isSelected = selectedTeam === teamName
-  const isAllTeams = selectedTeam === 'All Teams'
-  
-  return (
-    <Text
-      x={x - 8}
-      y={y}
-      fill={isSelected ? "var(--primary)" : (isAllTeams ? "var(--muted-foreground)" : "var(--muted)")}
-      textAnchor="end"
-      dominantBaseline="middle"
-      fontSize={12}
-      fontWeight={isSelected ? 600 : 400}
-      className="cursor-pointer"
-      onClick={() => onTeamClick(teamName)}
-    >
-      {shortName}
-    </Text>
-  )
-}
-
-// Custom tick component for right side labels
-const RightAxisTick = ({ x, y, payload, lastWeekRankMap, selectedTeam, onTeamClick }) => {
-  const teamName = lastWeekRankMap[payload.value]
-  
-  if (!teamName) return null
-  
-  const shortName = getShortTeamName(teamName)
-  const isSelected = selectedTeam === teamName
-  const isAllTeams = selectedTeam === 'All Teams'
-  
-  return (
-    <Text
-      x={x + 8}
-      y={y}
-      fill={isSelected ? "var(--primary)" : (isAllTeams ? "var(--muted-foreground)" : "var(--muted)")}
-      textAnchor="start"
-      dominantBaseline="middle"
-      fontSize={12}
-      fontWeight={isSelected ? 600 : 400}
-      className="cursor-pointer"
-      onClick={() => onTeamClick(teamName)}
-    >
-      {shortName}
-    </Text>
-  )
-}
 
 export default function BaseChart({ 
   title, 
@@ -84,6 +27,7 @@ export default function BaseChart({
   const [teamNames, setTeamNames] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     const loadChartData = async () => {
@@ -161,33 +105,6 @@ export default function BaseChart({
     )
   }
 
-  // Create separate rank maps for first and last weeks
-  const createRankMaps = () => {
-    const firstWeekRankMap = {}
-    const lastWeekRankMap = {}
-    
-    if (chartData.length > 0) {
-      // Get first week data for left side
-      const firstWeek = chartData[0]
-      Object.entries(firstWeek).forEach(([key, value]) => {
-        if (key !== 'week' && typeof value === 'number') {
-          firstWeekRankMap[value] = key
-        }
-      })
-      
-      // Get last week data for right side
-      const lastWeek = chartData[chartData.length - 1]
-      Object.entries(lastWeek).forEach(([key, value]) => {
-        if (key !== 'week' && typeof value === 'number') {
-          lastWeekRankMap[value] = key
-        }
-      })
-    }
-    
-    return { firstWeekRankMap, lastWeekRankMap }
-  }
-  
-  const { firstWeekRankMap, lastWeekRankMap } = createRankMaps()
 
   return (
     <Card className="mt-6">
@@ -199,8 +116,8 @@ export default function BaseChart({
           <LineChart
             data={chartData}
             margin={{
-              left: 80,
-              right: 80,
+              left: 0,
+              right: 0,
               top: 12,
               bottom: 12,
             }}
@@ -213,23 +130,21 @@ export default function BaseChart({
               tickMargin={8}
             />
             <YAxis 
-              domain={[0.5, Math.max(teamNames.length + 0.5, maxTeams)]}
+              domain={[1, Math.max(teamNames.length, maxTeams - 1)]}
               reversed={true}
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              tick={(props) => <LeftAxisTick {...props} firstWeekRankMap={firstWeekRankMap} selectedTeam={selectedTeam} onTeamClick={onTeamSelect} />}
               ticks={Array.from({length: Math.max(teamNames.length, maxTeams - 1)}, (_, i) => i + 1)}
             />
             <YAxis 
               yAxisId="right"
               orientation="right"
-              domain={[0.5, Math.max(teamNames.length + 0.5, maxTeams)]}
+              domain={[1, Math.max(teamNames.length, maxTeams - 1)]}
               reversed={true}
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              tick={(props) => <RightAxisTick {...props} lastWeekRankMap={lastWeekRankMap} selectedTeam={selectedTeam} onTeamClick={onTeamSelect} />}
               ticks={Array.from({length: Math.max(teamNames.length, maxTeams - 1)}, (_, i) => i + 1)}
             />
             <ChartTooltip 
@@ -264,6 +179,34 @@ export default function BaseChart({
             )}
           </LineChart>
         </ChartContainer>
+        
+        {/* Team Legend */}
+        <div className="mt-4 pb-2">
+          <div className="flex flex-wrap justify-center gap-2">
+            {teamNames.map((teamName) => {
+              const isSelected = selectedTeam === teamName
+              const isAllTeams = selectedTeam === 'All Teams'
+              
+              return (
+                <Button
+                  key={teamName}
+                  variant={isSelected ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => onTeamSelect(teamName)}
+                  className={`text-xs h-7 px-2 ${
+                    isSelected 
+                      ? '' 
+                      : isAllTeams 
+                        ? 'hover:bg-primary/10' 
+                        : 'opacity-50 hover:opacity-100'
+                  }`}
+                >
+                  {teamName}
+                </Button>
+              )
+            })}
+          </div>
+        </div>
       </CardContent>
     </Card>
   )
