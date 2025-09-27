@@ -1,18 +1,30 @@
 import { useQuery } from '@tanstack/react-query'
-import { apiCall, apiConfig } from '../config/api'
+import { apiConfig } from '../config/api'
 
 export function useOverallStandings() {
   return useQuery({
     queryKey: ['overallStandings', '2025'],
     queryFn: async () => {
-      const response = await apiCall(`${apiConfig.endpoints.overall}?season=2025`, {
-        timeout: 15000,
-        maxRetries: 3,
-        useCache: true
+      const response = await fetch(`${apiConfig.endpoints.overall}?season=2025`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       })
       
+      if (!response.ok) {
+        throw new Error(`Overall standings request failed: ${response.status}`)
+      }
+      
+      const data = await response.json()
+      
+      // Check if response has standings data
+      if (!data.standings || !Array.isArray(data.standings)) {
+        throw new Error('No overall standings data available')
+      }
+      
       // Transform API data to match expected format
-      return response.standings.map(team => ({
+      return data.standings.map(team => ({
         id: team.team_id,
         rank: team.current_rank,
         teamName: team.team_name,

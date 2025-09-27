@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { apiCall, apiConfig } from '../config/api'
+import { apiConfig } from '../config/api'
 
 // Hook to discover available weeks
 export function useAvailableWeeks() {
@@ -8,12 +8,18 @@ export function useAvailableWeeks() {
     queryFn: async () => {
       try {
         // Get current NFL state
-        const nflState = await apiCall(apiConfig.endpoints.nflState, {
-          timeout: 5000,
-          maxRetries: 2,
-          useCache: true
+        const nflStateResponse = await fetch(apiConfig.endpoints.nflState, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
         })
         
+        if (!nflStateResponse.ok) {
+          throw new Error(`NFL state request failed: ${nflStateResponse.status}`)
+        }
+        
+        const nflState = await nflStateResponse.json()
         const currentWeek = nflState.week || 1
         
         // Check which weeks actually have data by testing a few weeks
@@ -23,13 +29,18 @@ export function useAvailableWeeks() {
         // Test each week to see if it has data
         for (const week of potentialWeeks) {
           try {
-            const response = await apiCall(`${apiConfig.endpoints.weekly}?week=${week}&season=2025`, {
-              timeout: 3000,
-              maxRetries: 1,
-              useCache: true
+            const weekResponse = await fetch(`${apiConfig.endpoints.weekly}?week=${week}&season=2025`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+              },
             })
-            if (response.standings && response.standings.length > 0) {
-              availableWeeks.push(week)
+            
+            if (weekResponse.ok) {
+              const weekData = await weekResponse.json()
+              if (weekData.standings && weekData.standings.length > 0) {
+                availableWeeks.push(week)
+              }
             }
           } catch (err) {
             // Week doesn't have data, skip it
@@ -59,20 +70,27 @@ export function useWeeklyStandings(week) {
       if (!week) return []
       
       try {
-        const response = await apiCall(`${apiConfig.endpoints.weekly}?week=${week}&season=2025`, {
-          timeout: 15000,
-          maxRetries: 3,
-          useCache: true
+        const response = await fetch(`${apiConfig.endpoints.weekly}?week=${week}&season=2025`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
         })
         
+        if (!response.ok) {
+          throw new Error(`Weekly standings request failed: ${response.status}`)
+        }
+        
+        const data = await response.json()
+        
         // Check if response has standings data
-        if (!response.standings || !Array.isArray(response.standings)) {
+        if (!data.standings || !Array.isArray(data.standings)) {
           console.warn(`No standings data for week ${week}`)
           return []
         }
         
         // Transform API data to match expected format
-        return response.standings.map(team => ({
+        return data.standings.map(team => ({
           id: team.team_id,
           rank: team.rank,
           teamName: team.team_name,
