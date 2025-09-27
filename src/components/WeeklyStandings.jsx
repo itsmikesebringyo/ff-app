@@ -15,118 +15,26 @@ import {
 } from "@/components/ui/select"
 import { ChevronDown } from "lucide-react"
 import WeeklyStandingsChart from './WeeklyStandingsChart'
-import { apiCall, apiConfig } from '../config/api'
+import { useAvailableWeeks, useWeeklyStandings } from '../hooks/useWeeklyStandings'
 
 export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
   const [openItems, setOpenItems] = useState([])
   const [selectedWeek, setSelectedWeek] = useState("")
-  const [weeklyStandings, setWeeklyStandings] = useState([])
-  const [availableWeeks, setAvailableWeeks] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-
-  // Discover available weeks and fetch standings
+  
+  // Use React Query hooks
+  const { data: availableWeeks = [], isLoading: weeksLoading, error: weeksError } = useAvailableWeeks()
+  const { data: weeklyStandings = [], isLoading: standingsLoading, error: standingsError } = useWeeklyStandings(selectedWeek)
+  
+  // Set default week when available weeks are loaded
   useEffect(() => {
-    const discoverAvailableWeeks = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        
-        // PWA-optimized: Check weeks sequentially with intelligent caching
-        // Start from most recent weeks and work backwards for better UX
-        const availableWeekNumbers = []
-        const weeksToCheck = Array.from({ length: 18 }, (_, i) => 18 - i) // Check 18 down to 1
-        
-        for (const week of weeksToCheck) {
-          try {
-            const response = await apiCall(`${apiConfig.endpoints.weekly}?week=${week}&season=2025`, {
-              timeout: 5000, // Shorter timeout for discovery
-              maxRetries: 1,  // Fewer retries for discovery
-              useCache: true  // Use PWA caching for discovery
-            })
-            if (response.standings && response.standings.length > 0) {
-              availableWeekNumbers.unshift(week) // Add to beginning to maintain order
-            }
-          } catch (err) {
-            console.log(`Week ${week} not available:`, err.message)
-            // Continue checking other weeks
-          }
-        }
-        
-        // If no weeks found, try a few more with different approach
-        if (availableWeekNumbers.length === 0) {
-          console.log('No weeks found in reverse order, trying forward order...')
-          for (let week = 1; week <= 5; week++) { // Only check first 5 weeks as fallback
-            try {
-              const response = await apiCall(`${apiConfig.endpoints.weekly}?week=${week}&season=2025`, {
-                timeout: 8000,
-                maxRetries: 2,
-                useCache: true  // Use PWA caching for fallback
-              })
-              if (response.standings && response.standings.length > 0) {
-                availableWeekNumbers.push(week)
-                break // Found at least one week, that's enough
-              }
-            } catch (err) {
-              console.log(`Fallback week ${week} not available:`, err.message)
-            }
-          }
-        }
-        
-        setAvailableWeeks(availableWeekNumbers)
-        
-        // Set default to most recent week if not already selected
-        if (!selectedWeek && availableWeekNumbers.length > 0) {
-          const mostRecentWeek = Math.max(...availableWeekNumbers).toString()
-          setSelectedWeek(mostRecentWeek)
-        }
-        
-      } catch (err) {
-        console.error('Error discovering available weeks:', err)
-        setError('Failed to load available weeks')
-      } finally {
-        setLoading(false)
-      }
+    if (availableWeeks.length > 0 && !selectedWeek) {
+      const mostRecentWeek = Math.max(...availableWeeks).toString()
+      setSelectedWeek(mostRecentWeek)
     }
-
-    discoverAvailableWeeks()
-  }, [])
-
-  // Fetch weekly standings data when week is selected
-  useEffect(() => {
-    if (!selectedWeek) return
-    
-    const fetchWeeklyStandings = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        const response = await apiCall(`${apiConfig.endpoints.weekly}?week=${selectedWeek}&season=2025`, {
-          timeout: 15000, // Longer timeout for actual data fetch
-          maxRetries: 3,  // More retries for important data
-          useCache: true  // Use PWA caching for data
-        })
-        
-        // Transform API data to match expected format
-        const transformedData = response.standings.map(team => ({
-          id: team.team_id,
-          rank: team.rank,
-          teamName: team.team_name,
-          points: parseFloat(team.points || 0).toFixed(2),
-          record: `${team.wins ?? team.weekly_wins ?? 0}-${team.losses ?? team.weekly_losses ?? 0}`,
-          roster: team.roster || [] // API should provide roster data
-        }))
-        
-        setWeeklyStandings(transformedData)
-      } catch (err) {
-        console.error('Error fetching weekly standings:', err)
-        setError('Failed to load weekly standings')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchWeeklyStandings()
-  }, [selectedWeek])
+  }, [availableWeeks, selectedWeek])
+  
+  const loading = weeksLoading || standingsLoading
+  const error = weeksError || standingsError
 
   // Highlight selected team with background
   const getHighlightStyle = (teamName) => {
@@ -184,7 +92,7 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
           {error && (
             <div className="text-center py-8 text-red-500">
               <div className="flex flex-col items-center gap-2">
-                <span className="font-medium">{error}</span>
+                <span className="font-medium">{error?.message || 'Failed to load data'}</span>
                 <button 
                   onClick={() => window.location.reload()} 
                   className="text-sm text-blue-500 hover:text-blue-700 underline"

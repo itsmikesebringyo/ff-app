@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import { QueryClientProvider } from '@tanstack/react-query'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   DropdownMenu,
@@ -19,6 +21,7 @@ import OverallStandings from './components/OverallStandings'
 import { apiConfig, adminApiCall, clearPollingStatusCache } from './config/api'
 import { useTeams } from './hooks/useTeams'
 import { useNetworkStatus } from './hooks/useNetworkStatus'
+import { queryClient } from './lib/query-client'
 
 function App() {
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -149,7 +152,8 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <QueryClientProvider client={queryClient}>
+      <div className="min-h-screen bg-background">
       {/* Menu button in absolute top-right corner */}
       <div className="absolute top-8 right-8">
         <DropdownMenu>
@@ -365,11 +369,13 @@ function App() {
           </TabsContent>
           
           <TabsContent value="overall" className="mt-6">
-            <OverallStandings selectedTeam={selectedTeam} />
+            <OverallStandings selectedTeam={selectedTeam} onTeamSelect={setSelectedTeam} />
           </TabsContent>
           </Tabs>
       </div>
     </div>
+    <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   )
 }
 
