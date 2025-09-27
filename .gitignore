@@ -23,3 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
+
+# CDK output files
+infra/cdk.out/.cache
+infra/cdk.out/asset.*
