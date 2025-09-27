@@ -192,12 +192,12 @@ export default function BaseChart({
                   key={teamName}
                   variant={isSelected ? "default" : "outline"}
                   size="sm"
-                  onClick={() => onTeamSelect(teamName)}
+                  onClick={() => onTeamSelect(isSelected ? 'All Teams' : teamName)}
                   className={`text-xs h-7 px-2 ${
-                    isSelected 
-                      ? '' 
-                      : isAllTeams 
-                        ? 'hover:bg-primary/10' 
+                    isSelected
+                      ? ''
+                      : isAllTeams
+                        ? 'hover:bg-primary/10'
                         : 'opacity-50 hover:opacity-100'
                   }`}
                 >
