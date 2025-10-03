@@ -191,29 +191,21 @@ def handle_nfl_state():
         }
 
 def handle_polling_status(table):
-    """Get current polling status"""
+    """Get current polling status from DynamoDB"""
     try:
         response = table.get_item(Key={'id': 'polling_status'})
         item = response.get('Item', {})
-        
-        # Check if polling task is actually running
-        cluster_arn = os.environ['ECS_CLUSTER_ARN']
-        tasks = ecs.list_tasks(
-            cluster=cluster_arn,
-            family='ff-polling-service',
-            desiredStatus='RUNNING'
-        )
-        
-        is_running = len(tasks['taskArns']) > 0
-        
+
+        # Return the enabled status from DynamoDB
+        # The polling service checks this value to know whether to continue polling
+        enabled = item.get('enabled', False)
+
         return {
             'statusCode': 200,
             'headers': get_cors_headers(),
             'body': json.dumps({
-                'enabled': item.get('enabled', False),
-                'running': is_running,
-                'last_updated': item.get('last_updated', ''),
-                'task_count': len(tasks['taskArns'])
+                'enabled': enabled,
+                'last_updated': item.get('last_updated', '')
             })
         }
     except Exception as e:
@@ -221,7 +213,7 @@ def handle_polling_status(table):
         return {
             'statusCode': 500,
             'headers': get_cors_headers(),
-            'body': json.dumps({'error': 'Failed to get polling status'})
+            'body': json.dumps({'error': f'Failed to get polling status: {str(e)}'})
         }
 
 def handle_polling_toggle(table, context=None):

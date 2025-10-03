@@ -18,7 +18,7 @@ import { Switch } from "@/components/ui/switch"
 import { Moon, Sun, Menu } from "lucide-react"
 import WeeklyStandings from './components/WeeklyStandings'
 import OverallStandings from './components/OverallStandings'
-import { apiConfig, adminApiCall, clearPollingStatusCache } from './config/api'
+import { apiConfig, adminApiCall, clearPollingStatusCache, isPollingActive } from './config/api'
 import { useTeams } from './hooks/useTeams'
 import { useNetworkStatus } from './hooks/useNetworkStatus'
 import { queryClient } from './lib/query-client'
@@ -102,6 +102,22 @@ function App() {
         })
       })
     }
+  }, [])
+
+  // Fetch initial polling status using existing promise-based caching
+  useEffect(() => {
+    // Clear any stale cache on app load to ensure fresh status
+    clearPollingStatusCache()
+
+    isPollingActive()
+      .then(pollingActive => {
+        console.log('Initial polling status fetched:', pollingActive)
+        setIsPolling(pollingActive)
+      })
+      .catch(error => {
+        console.error('Failed to fetch initial polling status:', error)
+        // Keep default false value
+      })
   }, [])
 
   const handleUpdate = () => {
@@ -218,47 +234,33 @@ function App() {
                 <span>Admin</span>
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent>
-                <DropdownMenuItem 
-                  onClick={async (e) => {
-                    e.preventDefault()
-                    if (isAdmin) {
-                      try {
-                        const response = await adminApiCall(apiConfig.endpoints.pollingToggle, {
-                          method: 'POST'
-                        })
-                        setIsPolling(response.enabled)
-                        clearPollingStatusCache() // Clear the cache when toggling
-                        console.log('Polling toggled:', response.message)
-                      } catch (error) {
-                        console.error('Failed to toggle polling:', error)
-                        alert('Failed to toggle polling')
-                      }
-                    } else {
-                      console.log('Admin access required')
-                    }
-                  }}
-                  className={
-                    isPolling 
-                      ? `transition-all duration-300 bg-green-500/20 text-green-700 animate-pulse ${isAdmin ? 'cursor-pointer' : 'cursor-default'}`
-                      : isAdmin 
-                      ? 'transition-all duration-300 cursor-pointer'
-                      : 'transition-all duration-300 cursor-default text-muted-foreground'
-                  }
+                <DropdownMenuItem
+                  className="flex items-center justify-between w-full"
+                  onSelect={(e) => e.preventDefault()}
                 >
-                  <div className="flex items-center justify-between w-full">
-                    <span>Live Updates</span>
-                    <div className={`
-                      w-4 h-4 rounded-full border-2 transition-all duration-300
-                      ${isPolling 
-                        ? 'bg-green-500 border-green-500' 
-                        : 'bg-transparent border-gray-400'
+                  <span>Live Updates</span>
+                  <Switch
+                    checked={isPolling}
+                    onCheckedChange={async (checked) => {
+                      if (isAdmin) {
+                        try {
+                          const response = await adminApiCall(apiConfig.endpoints.pollingToggle, {
+                            method: 'POST'
+                          })
+                          setIsPolling(response.enabled)
+                          clearPollingStatusCache() // Clear the cache when toggling
+                          console.log('Polling toggled:', response.message)
+                        } catch (error) {
+                          console.error('Failed to toggle polling:', error)
+                          alert('Failed to toggle polling')
+                        }
+                      } else {
+                        console.log('Admin access required')
                       }
-                    `}>
-                      {isPolling && (
-                        <div className="w-full h-full bg-green-500 rounded-full animate-pulse"></div>
-                      )}
-                    </div>
-                  </div>
+                    }}
+                    disabled={!isAdmin}
+                    onClick={(e) => e.stopPropagation()}
+                  />
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onClick={async (e) => {

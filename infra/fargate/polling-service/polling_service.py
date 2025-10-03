@@ -143,16 +143,22 @@ class PollingService:
 
 
     def update_polling_state(self, status='running'):
-        """Update polling state in DynamoDB"""
+        """Update polling state heartbeat in DynamoDB without overwriting enabled flag"""
         try:
-            self.polling_state_table.put_item(Item={
-                'id': 'polling_status',
-                'enabled': True,
-                'status': status,
-                'last_heartbeat': datetime.now(timezone.utc).isoformat(),
-                'current_week': self.current_week,
-                'current_season': self.current_season
-            })
+            # Use update_item instead of put_item to avoid overwriting the 'enabled' field
+            self.polling_state_table.update_item(
+                Key={'id': 'polling_status'},
+                UpdateExpression='SET #status = :status, last_heartbeat = :heartbeat, current_week = :week, current_season = :season',
+                ExpressionAttributeNames={
+                    '#status': 'status'
+                },
+                ExpressionAttributeValues={
+                    ':status': status,
+                    ':heartbeat': datetime.now(timezone.utc).isoformat(),
+                    ':week': self.current_week,
+                    ':season': self.current_season
+                }
+            )
         except Exception as e:
             logger.warning(f"Failed to update polling state: {e}")
 
