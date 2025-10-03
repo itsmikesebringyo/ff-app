@@ -29,7 +29,7 @@ const POLLING_STATUS_CACHE_DURATION = 60 * 60 * 1000; // Cache for 1 hour
 let pollingStatusPromise = null;
 
 // Check if polling is currently active (with fallback for reliability)
-const isPollingActive = async () => {
+export const isPollingActive = async () => {
   // If there's already a request in flight, return that promise
   if (pollingStatusPromise) {
     return pollingStatusPromise;

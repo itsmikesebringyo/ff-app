@@ -861,14 +861,14 @@
      "S3Bucket": {
       "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
      },
-     "S3Key": "fbfe2309bb3bca53a4b66a9c51112c0eeb3349d93fd12b902181f2c17ec982a4.zip"
+     "S3Key": "7b358f22239f34d7a8a136cc5058abb4f8b1192568d303eb82dabab0d9696edc.zip"
     },
     "Description": "Standings calculation library (ff_standings) shared across Lambdas",
     "LayerName": "ff-standings-calculation-layer"
    },
    "Metadata": {
     "aws:cdk:path": "InfrastructureStack/StandingsCalculationLayer/Resource",
-    "aws:asset:path": "asset.fbfe2309bb3bca53a4b66a9c51112c0eeb3349d93fd12b902181f2c17ec982a4",
+    "aws:asset:path": "asset.7b358f22239f34d7a8a136cc5058abb4f8b1192568d303eb82dabab0d9696edc",
     "aws:asset:is-bundled": true,
     "aws:asset:property": "Content"
    }
@@ -1481,7 +1481,7 @@
      "S3Bucket": {
       "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
      },
-     "S3Key": "c32d85bb64841cbaeb1fd16aa1bf506fdfd4edaa8a87dafb685b61e8b34cb2c7.zip"
+     "S3Key": "e13c2329fad8e30ab3535c0320e3994c9efb808b8a036c20f72e1154eb872a25.zip"
     },
     "Environment": {
      "Variables": {
@@ -1557,7 +1557,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "InfrastructureStack/ApiFunction/Resource",
-    "aws:asset:path": "asset.c32d85bb64841cbaeb1fd16aa1bf506fdfd4edaa8a87dafb685b61e8b34cb2c7",
+    "aws:asset:path": "asset.e13c2329fad8e30ab3535c0320e3994c9efb808b8a036c20f72e1154eb872a25",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Code"
    }
