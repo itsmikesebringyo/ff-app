@@ -27,8 +27,13 @@ dependencies:
     specifier: ^4.1.13
     version: 4.1.13(vite@7.1.6)
   '@tanstack/react-query':
+<<<<<<< HEAD
     specifier: ^5.90.2
     version: 5.90.2(react@19.1.1)
+=======
+    specifier: ^5.89.0
+    version: 5.89.0(react@19.1.1)
+>>>>>>> 1f5c921 (feat(app): add projections hooks and sleeper hooks to app)
   class-variance-authority:
     specifier: ^0.7.1
     version: 0.7.1
@@ -2605,6 +2610,7 @@ packages:
       vite: 7.1.6(@types/node@24.5.2)
     dev: false
 
+<<<<<<< HEAD
   /@tanstack/query-core@5.90.2:
     resolution: {integrity: sha512-k/TcR3YalnzibscALLwxeiLUub6jN5EDLwKDiO7q5f4ICEoptJ+n9+7vcEFy5/x/i6Q+Lb/tXrsKCggf5uQJXQ==}
 
@@ -2630,6 +2636,20 @@ packages:
     dependencies:
       '@tanstack/query-core': 5.90.2
       react: 19.1.1
+=======
+  /@tanstack/query-core@5.89.0:
+    resolution: {integrity: sha512-joFV1MuPhSLsKfTzwjmPDrp8ENfZ9N23ymFu07nLfn3JCkSHy0CFgsyhHTJOmWaumC/WiNIKM0EJyduCF/Ih/Q==}
+    dev: false
+
+  /@tanstack/react-query@5.89.0(react@19.1.1):
+    resolution: {integrity: sha512-SXbtWSTSRXyBOe80mszPxpEbaN4XPRUp/i0EfQK1uyj3KCk/c8FuPJNIRwzOVe/OU3rzxrYtiNabsAmk1l714A==}
+    peerDependencies:
+      react: ^18 || ^19
+    dependencies:
+      '@tanstack/query-core': 5.89.0
+      react: 19.1.1
+    dev: false
+>>>>>>> 1f5c921 (feat(app): add projections hooks and sleeper hooks to app)
 
   /@types/babel__core@7.20.5:
     resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}

@@ -24,7 +24,7 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
   // Use React Query hooks
   const { data: availableWeeks = [], isLoading: weeksLoading, error: weeksError } = useAvailableWeeks()
   const { data: weeklyStandings = [], isLoading: standingsLoading, error: standingsError } = useWeeklyStandings(selectedWeek)
-  
+
   // Set default week when available weeks are loaded
   useEffect(() => {
     if (availableWeeks.length > 0 && !selectedWeek) {
@@ -129,31 +129,64 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
                       </div>
                       <div className="font-medium">
                         <span className="text-primary">{team.points}</span>
+                        {team.adjustedProjectedTotal && parseFloat(team.adjustedProjectedTotal) > 0 && (
+                          <span className="text-xs text-gray-400 ml-1">/{team.adjustedProjectedTotal}</span>
+                        )}
                       </div>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="px-4 pb-4">
                       <div className="bg-muted rounded-lg p-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                          {team.roster && team.roster.length > 0 ? (
-                            team.roster.map((player, index) => (
-                              <div key={index} className="flex justify-between items-center py-1">
-                                <span className="text-xs">
-                                  <span className="font-medium text-muted-foreground w-8 inline-block">
-                                    {player.position}
+                        {team.starters && team.starters.length > 0 ? (
+                          <>
+                            {/* Starters Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 border-b pb-2 mb-2">
+                              {team.starters.map((player, index) => (
+                                <div key={index} className="flex justify-between items-center py-1">
+                                  <span className="text-xs">
+                                    <span className="font-medium text-muted-foreground w-8 inline-block">
+                                      {player.lineup_position}
+                                    </span>
+                                    {player.player}
                                   </span>
-                                  {player.player}
-                                </span>
-                                <span className="text-xs font-medium">{parseFloat(player.points || 0).toFixed(2)}</span>
-                              </div>
-                            ))
-                          ) : (
-                            <div className="text-center text-muted-foreground text-sm py-4">
-                              Roster data not available
+                                  <div className="text-xs font-medium">
+                                    {parseFloat(player.points || 0).toFixed(2)}
+                                    <span className="text-gray-400">/{parseFloat(player.projected_points || 0).toFixed(1)}</span>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                          )}
-                        </div>
+                            
+                            {/* Bench Players Grid */}
+                            {team.benchPlayers && team.benchPlayers.length > 0 && (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                {team.benchPlayers.map((player, index) => {
+                                  const actualPoints = parseFloat(player.points || 0)
+                                  const hasPlayed = actualPoints > 0
+                                  
+                                  return (
+                                    <div key={`bench-${index}`} className="flex justify-between items-center py-1 opacity-75">
+                                      <span className="text-xs">
+                                        <span className="font-medium text-muted-foreground w-8 inline-block">
+                                          {player.position}
+                                        </span>
+                                        {player.player}
+                                      </span>
+                                      <div className="text-xs text-muted-foreground">
+                                        {hasPlayed ? actualPoints.toFixed(2) : '--'}/{parseFloat(player.projected_points || 0).toFixed(1)}
+                                      </div>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="text-center text-muted-foreground text-sm py-4">
+                            Roster data not available
+                          </div>
+                        )}
                       </div>
                     </div>
                   </AccordionContent>
