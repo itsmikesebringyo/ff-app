@@ -16,14 +16,31 @@ import {
 import { ChevronDown } from "lucide-react"
 import WeeklyStandingsChart from './WeeklyStandingsChart'
 import { useAvailableWeeks, useWeeklyStandings } from '../hooks/useWeeklyStandings'
+import { useSleeperNFLState } from '../hooks/useSleeper'
 
 export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
   const [openItems, setOpenItems] = useState([])
   const [selectedWeek, setSelectedWeek] = useState("")
   
+  // Get NFL state to check for active games
+  const { data: nflState } = useSleeperNFLState()
+  
+  // Check if there are active games
+  const hasActiveGames = nflState?.season_type === 'regular' && 
+                         nflState?.leg === parseInt(selectedWeek) && // leg means current week during season
+                         nflState?.week === parseInt(selectedWeek) // current week matches selected week
+  
+  // Determine polling interval
+  const pollingInterval = hasActiveGames ? 10000 : null
+  
   // Use React Query hooks
   const { data: availableWeeks = [], isLoading: weeksLoading, error: weeksError } = useAvailableWeeks()
-  const { data: weeklyStandings = [], isLoading: standingsLoading, error: standingsError } = useWeeklyStandings(selectedWeek)
+  const { 
+    data: weeklyStandings = [], 
+    isLoading: standingsLoading, 
+    error: standingsError,
+    dataUpdatedAt
+  } = useWeeklyStandings(selectedWeek, pollingInterval)
 
   // Set default week when available weeks are loaded
   useEffect(() => {
@@ -32,6 +49,7 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
       setSelectedWeek(mostRecentWeek)
     }
   }, [availableWeeks, selectedWeek])
+
   
   const loading = weeksLoading || standingsLoading
   const error = weeksError || standingsError
@@ -55,7 +73,7 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
       <Card>
         <CardContent className="pt-6">
           {/* Week Selector */}
-          <div className="flex justify-center mb-6">
+          <div className="flex justify-center mb-4">
             <Select value={selectedWeek} onValueChange={setSelectedWeek} disabled={loading || weeks.length === 0}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder={loading ? "Loading..." : weeks.length === 0 ? "No weeks" : "Select week"} />
@@ -69,6 +87,28 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Auto-Refresh Toggle */}
+          {(hasActiveGames || pollingInterval) && (
+            <div className="flex flex-col items-center mb-6">
+              <div className="flex items-center gap-2">
+                {pollingInterval && (
+                  <>
+                    <div className="relative flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-lime-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-lime-500"></span>
+                    </div>
+                    <span className="text-sm text-muted-foreground">Auto-refreshing...</span>
+                  </>
+                )}
+              </div>
+              {dataUpdatedAt && (
+                <span className="text-xs text-muted-foreground/60 mt-1">
+                  Last updated: {new Date(dataUpdatedAt).toLocaleTimeString()}
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Column Headers */}
           <div className="flex justify-between items-center py-2 border-b font-medium text-sm text-muted-foreground">
