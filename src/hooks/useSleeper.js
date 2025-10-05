@@ -11,7 +11,9 @@ const LEAGUE_ID = '1251986365806034944'
  * Hook to fetch rosters directly from Sleeper API
  * @returns {Object} TanStack Query result with roster data
  */
-export const useSleeperRosters = () => {
+export const useSleeperRosters = (options = {}) => {
+  const { pollingInterval = null } = options
+  
   return useQuery({
     queryKey: ['sleeper-rosters', LEAGUE_ID],
     queryFn: async () => {
@@ -31,7 +33,8 @@ export const useSleeperRosters = () => {
     },
     staleTime: 5 * 60 * 1000, // 5 minutes for roster data
     gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    refetchInterval: pollingInterval
   })
 }
 
@@ -67,9 +70,12 @@ export const useSleeperUsers = () => {
 /**
  * Hook to fetch matchups for a specific week directly from Sleeper API
  * @param {number} week - Week number to fetch matchups for
+ * @param {Object} options - Query options including polling interval
  * @returns {Object} TanStack Query result with matchup data
  */
-export const useSleeperMatchups = (week) => {
+export const useSleeperMatchups = (week, options = {}) => {
+  const { pollingInterval = null } = options
+  
   return useQuery({
     queryKey: ['sleeper-matchups', LEAGUE_ID, week],
     queryFn: async () => {
@@ -94,7 +100,8 @@ export const useSleeperMatchups = (week) => {
     enabled: !!week,
     staleTime: 5 * 60 * 1000, // 5 minutes for matchup data
     gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    refetchInterval: pollingInterval
   })
 }
 
@@ -106,7 +113,7 @@ export const useSleeperMatchups = (week) => {
  * @returns {Object} TanStack Query result with projection data
  */
 export const useSleeperProjections = ({
-  week, season = '2025', seasonType = 'regular' } = {}) => {
+  week, season = '2025', seasonType = 'regular', pollingInterval = null } = {}) => {
   return useQuery({
     enabled: !!week,
     queryKey: ['sleeper-projections', week, season, seasonType],
@@ -149,6 +156,35 @@ export const useSleeperProjections = ({
     },
     retry: 3,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchInterval: pollingInterval
+  })
+}
+
+/**
+ * Hook to fetch current NFL state directly from Sleeper API
+ * @returns {Object} TanStack Query result with NFL state data
+ */
+export const useSleeperNFLState = () => {
+  return useQuery({
+    queryKey: ['sleeper-nfl-state'],
+    queryFn: async () => {
+      const response = await fetch(`${SLEEPER_API_BASE}/state/nfl`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        signal: AbortSignal.timeout(10000)
+      })
+
+      if (!response.ok) {
+        throw new Error(`Sleeper API error: ${response.status} ${response.statusText}`)
+      }
+
+      return response.json()
+    },
+    staleTime: 60 * 1000, // 1 minute
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false
   })
@@ -198,13 +234,26 @@ export const useSleeperPlayers = () => {
 /**
  * Enhanced roster hook that includes player projections
  * @param {number} week - Week number for projections
+ * @param {Object} options - Query options including polling interval
  * @returns {Object} Roster data with player projections
  */
-export const useSleeperRostersWithProjections = (week) => {
-  const { data: rosters } = useSleeperRosters()
+export const useSleeperRostersWithProjections = (week, options = {}) => {
+  const { data: nflState } = useSleeperNFLState()
+  
+  // Check if there are active games based on NFL state
+  const hasActiveGames = nflState?.season_type === 'regular' && 
+                         nflState?.leg === 0 && // leg 0 means games are in progress
+                         nflState?.week === week // current week matches requested week
+  
+  // Auto-enable polling if games are active
+  const defaultPollingInterval = hasActiveGames ? 10000 : null // 10 seconds when games are active
+  
+  const { pollingInterval = defaultPollingInterval } = options
+  
+  const { data: rosters } = useSleeperRosters({ pollingInterval })
   const { data: users } = useSleeperUsers()
   const { data: players } = useSleeperPlayers()
-  const { data: projections } = useSleeperProjections({ week })
+  const { data: projections } = useSleeperProjections({ week, pollingInterval })
 
   return useQuery({
     queryKey: ['sleeper-rosters-with-projections', week],
@@ -267,6 +316,7 @@ export const useSleeperRostersWithProjections = (week) => {
     enabled: !!week && !!rosters && !!users && !!players && !!projections,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    refetchInterval: pollingInterval
   })
 }

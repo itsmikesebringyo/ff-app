@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { apiConfig } from '../config/api'
-import { useSleeperProjections, useSleeperRosters, useSleeperUsers, useSleeperPlayers, useSleeperMatchups } from './useSleeper'
+import { useSleeperProjections, useSleeperRosters, useSleeperUsers, useSleeperPlayers, useSleeperMatchups, useSleeperNFLState } from './useSleeper'
 
 // Hook to discover available weeks
 export function useAvailableWeeks() {
@@ -64,12 +64,12 @@ export function useAvailableWeeks() {
 }
 
 // Hook to get weekly standings for a specific week using Sleeper API
-export function useWeeklyStandings(week) {
-  const { data: matchups } = useSleeperMatchups(week)
-  const { data: rosters } = useSleeperRosters()
+export function useWeeklyStandings(week, pollingInterval = null) {
+  const { data: matchups } = useSleeperMatchups(week, { pollingInterval })
+  const { data: rosters } = useSleeperRosters({ pollingInterval })
   const { data: users } = useSleeperUsers()
   const { data: players } = useSleeperPlayers()
-  const { data: projectionsData } = useSleeperProjections({ week })
+  const { data: projectionsData } = useSleeperProjections({ week, pollingInterval })
 
   return useQuery({
     queryKey: ['weeklyStandings', week],
@@ -168,7 +168,9 @@ export function useWeeklyStandings(week) {
       return standings
     },
     enabled: !!week && !!rosters && !!users && !!players && !!matchups,
-    staleTime: 1000 * 60 * 2, // 2 minutes - shorter for live data
+    staleTime: pollingInterval ? 1000 * 5 : 1000 * 60 * 2, // 5 seconds when polling, 2 minutes otherwise
     gcTime: 1000 * 60 * 10, // 10 minutes
+    refetchInterval: pollingInterval
   })
+
 }
