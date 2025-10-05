@@ -168,7 +168,7 @@ export function useWeeklyStandings(week, pollingInterval = null) {
       return standings
     },
     enabled: !!week && !!rosters && !!users && !!players && !!matchups,
-    staleTime: pollingInterval ? 1000 * 5 : 1000 * 60 * 2, // 5 seconds when polling, 2 minutes otherwise
+    staleTime: pollingInterval ? pollingInterval : 1000 * 60 * 2, // Match polling interval when active, 2 minutes otherwise
     gcTime: 1000 * 60 * 10, // 10 minutes
     refetchInterval: pollingInterval
   })
