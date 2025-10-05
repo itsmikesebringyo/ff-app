@@ -27,7 +27,6 @@ export default function BaseChart({
   const [teamNames, setTeamNames] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const isMobile = useIsMobile()
 
   useEffect(() => {
     const loadChartData = async () => {
