@@ -45,7 +45,7 @@ function App() {
   const { teams, loading: teamsLoading, error: teamsError } = useTeams()
   
   // Network status for mobile connectivity awareness
-  const { isOnline, connectionType, isSlowConnection } = useNetworkStatus()
+  const { isOnline, isSlowConnection } = useNetworkStatus()
   
   // PWA update handling
   const [updateAvailable, setUpdateAvailable] = useState(false)
@@ -55,7 +55,7 @@ function App() {
   useEffect(() => {
     if (!teamsLoading && !teamsError && teams.length > 0) {
       // If current selectedTeam is not in the loaded teams, reset to 'All Teams'
-      if (!teams.includes(selectedTeam)) {
+      if (!teams.includes(selectedTeam.trim())) {
         setSelectedTeam('All Teams')
       }
     }

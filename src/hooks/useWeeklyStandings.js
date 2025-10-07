@@ -134,11 +134,10 @@ export function useWeeklyStandings(week, pollingInterval = null) {
           return null
         }).filter(Boolean)
 
-        // Calculate adjusted projected total (actual points if played, otherwise projection)
-        const adjustedProjectedTotal = startersInOrder.reduce((total, player) => {
-          const actualPoints = parseFloat(player.points || 0)
+        // Calculate projected total (always use projected points)
+        const projectedTotal = startersInOrder.reduce((total, player) => {
           const projectedPoints = parseFloat(player.projected_points || 0)
-          return total + (actualPoints > 0 ? actualPoints : projectedPoints)
+          return total + projectedPoints
         }, 0)
 
         // Calculate total actual points for the team
@@ -149,7 +148,7 @@ export function useWeeklyStandings(week, pollingInterval = null) {
           roster_id: roster.roster_id,
           teamName: teamName,
           points: totalActualPoints.toFixed(2),
-          adjustedProjectedTotal: adjustedProjectedTotal.toFixed(1),
+          projectedTotal: projectedTotal.toFixed(1),
           starters: startersInOrder,
           benchPlayers: benchPlayers
         }

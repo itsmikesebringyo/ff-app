@@ -169,8 +169,8 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
                       </div>
                       <div className="font-medium">
                         <span className="text-primary">{team.points}</span>
-                        {team.adjustedProjectedTotal && parseFloat(team.adjustedProjectedTotal) > 0 && (
-                          <span className="text-xs text-gray-400 ml-1">/{team.adjustedProjectedTotal}</span>
+                        {team.projectedTotal && parseFloat(team.projectedTotal) > 0 && (
+                          <span className="text-xs text-gray-400 ml-1">/{team.projectedTotal}</span>
                         )}
                       </div>
                     </div>
