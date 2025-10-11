@@ -16,22 +16,17 @@ import {
 import { ChevronDown } from "lucide-react"
 import WeeklyStandingsChart from './WeeklyStandingsChart'
 import { useAvailableWeeks, useWeeklyStandings } from '../hooks/useWeeklyStandings'
-import { useSleeperNFLState } from '../hooks/useSleeper'
+import { useActiveGameTime } from '../hooks/useActiveGameTime'
 
 export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
   const [openItems, setOpenItems] = useState([])
   const [selectedWeek, setSelectedWeek] = useState("")
   
-  // Get NFL state to check for active games
-  const { data: nflState } = useSleeperNFLState()
-  
-  // Check if there are active games
-  const hasActiveGames = nflState?.season_type === 'regular' && 
-                         nflState?.leg === parseInt(selectedWeek) && // leg means current week during season
-                         nflState?.week === parseInt(selectedWeek) // current week matches selected week
+  // Check for active game times
+  const hasActiveGames = useActiveGameTime(selectedWeek)
   
   // Determine polling interval
-  const pollingInterval = hasActiveGames ? 10000 : null
+  const pollingInterval = hasActiveGames ? 3_000 : null // refresh every 3 seconds if active games
   
   // Use React Query hooks
   const { data: availableWeeks = [], isLoading: weeksLoading, error: weeksError } = useAvailableWeeks()
@@ -102,11 +97,11 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
                   </>
                 )}
               </div>
-              {dataUpdatedAt && (
+              {dataUpdatedAt ? (
                 <span className="text-xs text-muted-foreground/60 mt-1">
                   Last updated: {new Date(dataUpdatedAt).toLocaleTimeString()}
                 </span>
-              )}
+              ) : null}
             </div>
           )}
 

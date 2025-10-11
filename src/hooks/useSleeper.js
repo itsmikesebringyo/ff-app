@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useActiveGameTime } from './useActiveGameTime'
 
 // Sleeper API base URL
 const SLEEPER_API_BASE = 'https://api.sleeper.app/v1'
@@ -238,15 +239,11 @@ export const useSleeperPlayers = () => {
  * @returns {Object} Roster data with player projections
  */
 export const useSleeperRostersWithProjections = (week, options = {}) => {
-  const { data: nflState } = useSleeperNFLState()
-  
-  // Check if there are active games based on NFL state
-  const hasActiveGames = nflState?.season_type === 'regular' && 
-                         nflState?.leg === 0 && // leg 0 means games are in progress
-                         nflState?.week === week // current week matches requested week
+  // Check if it's an active game time
+  const hasActiveGames = useActiveGameTime(week)
   
   // Auto-enable polling if games are active
-  const defaultPollingInterval = hasActiveGames ? 10000 : null // 10 seconds when games are active
+  const defaultPollingInterval = hasActiveGames ? 3_000 : null // 3 seconds when games are active
   
   const { pollingInterval = defaultPollingInterval } = options
   

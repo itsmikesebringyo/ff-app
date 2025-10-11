@@ -1,34 +1,24 @@
 import { useQuery } from '@tanstack/react-query'
 import { apiConfig } from '../config/api'
 import { useSleeperProjections, useSleeperRosters, useSleeperUsers, useSleeperPlayers, useSleeperMatchups, useSleeperNFLState } from './useSleeper'
+import { useActiveGameTime } from './useActiveGameTime'
 
 // Hook to discover available weeks
 export function useAvailableWeeks() {
+  const { data: nflState } = useSleeperNFLState()
+  
   return useQuery({
-    queryKey: ['availableWeeks'],
+    queryKey: ['availableWeeks', nflState?.week],
     queryFn: async () => {
       try {
-        // Get current NFL state
-        const nflStateResponse = await fetch(apiConfig.endpoints.nflState, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        })
+        const currentWeek = nflState?.week || 1
         
-        if (!nflStateResponse.ok) {
-          throw new Error(`NFL state request failed: ${nflStateResponse.status}`)
-        }
-        
-        const nflState = await nflStateResponse.json()
-        const currentWeek = nflState.week || 1
-        
-        // Check which weeks actually have data by testing a few weeks
-        const potentialWeeks = Array.from({ length: Math.min(currentWeek, 5) }, (_, i) => i + 1)
+        // Check which weeks actually have data, starting from current week and going backwards
+        const maxWeeksToCheck = Math.min(currentWeek, 18) // Check up to current week or week 18
         const availableWeeks = []
         
-        // Test each week to see if it has data
-        for (const week of potentialWeeks) {
+        // Test each week to see if it has data, starting from current week going backwards
+        for (let week = maxWeeksToCheck; week >= 1; week--) {
           try {
             const weekResponse = await fetch(`${apiConfig.endpoints.weekly}?week=${week}&season=2025`, {
               method: 'GET',
@@ -40,7 +30,7 @@ export function useAvailableWeeks() {
             if (weekResponse.ok) {
               const weekData = await weekResponse.json()
               if (weekData.standings && weekData.standings.length > 0) {
-                availableWeeks.push(week)
+                availableWeeks.unshift(week) // Add to beginning to maintain ascending order
               }
             }
           } catch (err) {
@@ -53,11 +43,12 @@ export function useAvailableWeeks() {
         return availableWeeks.length > 0 ? availableWeeks : [1]
         
       } catch (error) {
-        console.error('Error getting NFL state:', error)
-        // Fallback to just week 1 if NFL state fails
+        console.error('Error checking available weeks:', error)
+        // Fallback to just week 1 if check fails
         return [1]
       }
     },
+    enabled: !!nflState,
     staleTime: 1000 * 60 * 10, // 10 minutes
     gcTime: 1000 * 60 * 30, // 30 minutes
   })
@@ -65,11 +56,17 @@ export function useAvailableWeeks() {
 
 // Hook to get weekly standings for a specific week using Sleeper API
 export function useWeeklyStandings(week, pollingInterval = null) {
-  const { data: matchups } = useSleeperMatchups(week, { pollingInterval })
-  const { data: rosters } = useSleeperRosters({ pollingInterval })
+  // Check if it's an active game time
+  const isActiveGameTime = useActiveGameTime()
+  
+  // Only use polling interval on active NFL game days
+  const activePollingInterval = isActiveGameTime ? pollingInterval : null
+  
+  const { data: matchups } = useSleeperMatchups(week, { pollingInterval: activePollingInterval })
+  const { data: rosters } = useSleeperRosters({ pollingInterval: activePollingInterval })
   const { data: users } = useSleeperUsers()
   const { data: players } = useSleeperPlayers()
-  const { data: projectionsData } = useSleeperProjections({ week, pollingInterval })
+  const { data: projectionsData } = useSleeperProjections({ week, pollingInterval: activePollingInterval })
 
   return useQuery({
     queryKey: ['weeklyStandings', week],
@@ -167,9 +164,9 @@ export function useWeeklyStandings(week, pollingInterval = null) {
       return standings
     },
     enabled: !!week && !!rosters && !!users && !!players && !!matchups,
-    staleTime: pollingInterval ? pollingInterval : 1000 * 60 * 2, // Match polling interval when active, 2 minutes otherwise
+    staleTime: activePollingInterval ? activePollingInterval : 1000 * 60 * 2, // Match polling interval when active, 2 minutes otherwise
     gcTime: 1000 * 60 * 10, // 10 minutes
-    refetchInterval: pollingInterval
+    refetchInterval: activePollingInterval
   })
 
 }
