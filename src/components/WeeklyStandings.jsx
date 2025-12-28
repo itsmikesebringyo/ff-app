@@ -80,7 +80,7 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
   return (
     <div>
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="pt-3 sm:pt-6">
           {/* Week Selector */}
           <div className="flex justify-center mb-4">
             <Select value={selectedWeek} onValueChange={setSelectedWeek} disabled={loading || weeks.length === 0}>
@@ -170,7 +170,7 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
                 const highlight = getHighlightStyle(team.teamName)
                 return (
                 <AccordionItem key={team.id} value={team.id} className={highlight.className || ""}>
-                  <AccordionTrigger className="px-4 hover:no-underline [&>svg]:hidden">
+                  <AccordionTrigger className="px-2 sm:px-4 hover:no-underline [&>svg]:hidden">
                     <div className="flex items-center justify-between w-full">
                       <div className="flex items-center gap-2">
                         <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ${openItems.includes(team.id) ? 'rotate-180' : ''}`} />
@@ -192,8 +192,8 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="px-4 pb-4">
-                      <div className="bg-muted rounded-lg p-4">
+                    <div className="px-2 sm:px-4 pb-2 sm:pb-4">
+                      <div className="bg-muted rounded-lg p-2 sm:p-4">
                         {team.starters && team.starters.length > 0 ? (
                           <>
                             {/* Starters Grid */}

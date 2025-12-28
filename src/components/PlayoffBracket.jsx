@@ -366,7 +366,7 @@ function TeamCard({ team, seed, score, projectedScore, isWinner, highlight, isCh
   if (!team) return <div className="flex-1" />
   
   return (
-    <div className={`flex-1 p-2 sm:p-4 rounded-lg border ${highlight} ${isWinner ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : ''} ${isChampion ? 'ring-2 ring-yellow-500' : ''}`}>
+    <div className={`flex-1 p-1.5 sm:p-4 rounded-lg border ${highlight} ${isWinner ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : ''} ${isChampion ? 'ring-2 ring-yellow-500' : ''}`}>
       <div className="text-center space-y-1">
         {seed && (
           <div className="text-xs text-muted-foreground">Seed #{seed}</div>
