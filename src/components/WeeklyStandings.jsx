@@ -84,7 +84,7 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
           {/* Week Selector */}
           <div className="flex justify-center mb-4">
             <Select value={selectedWeek} onValueChange={setSelectedWeek} disabled={loading || weeks.length === 0}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className={`${isPlayoffWeek ? 'w-[180px]' : 'w-[140px]'}`}>
                 <SelectValue placeholder={loading ? "Loading..." : weeks.length === 0 ? "No weeks" : "Select week"} />
               </SelectTrigger>
               <SelectContent>
