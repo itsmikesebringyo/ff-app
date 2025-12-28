@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/select"
 import { ChevronDown } from "lucide-react"
 import WeeklyStandingsChart from './WeeklyStandingsChart'
-import PlayoffBracket from './PlayoffBracket'
 import { useAvailableWeeks, useWeeklyStandings } from '../hooks/useWeeklyStandings'
 import { useActiveGameTime } from '../hooks/useActiveGameTime'
 import { useCurrentWeek } from '../hooks/useCurrentWeek'
@@ -71,11 +70,8 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
     }
   }
 
-  // Use only available weeks for dropdown
-  const weeks = availableWeeks.map(week => week.toString())
-  
-  // Check if selected week is a playoff week
-  const isPlayoffWeek = selectedWeek === "16" || selectedWeek === "17"
+  // Use only weeks 1-15 for weekly standings (no playoffs)
+  const weeks = availableWeeks.filter(week => week <= 15).map(week => week.toString())
 
   return (
     <div>
@@ -84,15 +80,13 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
           {/* Week Selector */}
           <div className="flex justify-center mb-4">
             <Select value={selectedWeek} onValueChange={setSelectedWeek} disabled={loading || weeks.length === 0}>
-              <SelectTrigger className={`${isPlayoffWeek ? 'w-[180px]' : 'w-[140px]'}`}>
+              <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder={loading ? "Loading..." : weeks.length === 0 ? "No weeks" : "Select week"} />
               </SelectTrigger>
               <SelectContent>
                 {weeks.map((week) => (
                   <SelectItem key={week} value={week}>
                     Week {week}
-                    {week === "16" && " 🏆 (Playoffs)"}
-                    {week === "17" && " 🏆 (Championship)"}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -121,22 +115,17 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
             </div>
           )}
 
-          {/* Show playoff bracket or regular standings */}
-          {isPlayoffWeek ? (
-              <PlayoffBracket week={selectedWeek} selectedTeam={selectedTeam} />
-          ) : (
-            <>
-              {/* Column Headers */}
-              <div className="flex justify-between items-center py-2 border-b font-medium text-sm text-muted-foreground">
-                <div className="flex items-center gap-2 pl-10">
-                  <span>Team</span>
-                </div>
-                <div className="pr-4">
-                  <span>Points</span>
-                </div>
-              </div>
+          {/* Column Headers */}
+          <div className="flex justify-between items-center py-2 border-b font-medium text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 pl-10">
+              <span>Team</span>
+            </div>
+            <div className="pr-4">
+              <span>Points</span>
+            </div>
+          </div>
 
-              {loading && (
+          {loading && (
             <div className="text-center py-8 text-muted-foreground">
               <div className="flex flex-col items-center gap-2">
                 <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-b-2 border-primary"></div>
@@ -250,8 +239,6 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
                 )
               })}
             </Accordion>
-              )}
-            </>
           )}
         </CardContent>
       </Card>
