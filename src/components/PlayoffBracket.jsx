@@ -87,7 +87,7 @@ export default function PlayoffBracket({ week, selectedTeam }) {
   if (isLoading) {
     return (
       <div className="text-center py-8">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+        <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-b-2 border-primary mx-auto"></div>
         <p className="mt-2 text-muted-foreground">Loading playoff bracket...</p>
       </div>
     )
@@ -234,30 +234,36 @@ export default function PlayoffBracket({ week, selectedTeam }) {
     
     return (
       <div className="space-y-6">
-        <div className="grid gap-8">
-          {/* Championship Match */}
-          <FinalsMatch
-            match={finalsMatch}
-            title="Championship Game"
-            icon={<Trophy className="h-5 w-5" />}
-            highlight1={getHighlightStyle(finalist1)}
-            highlight2={getHighlightStyle(finalist2)}
-            borderClass="border-2 border-yellow-500 dark:border-yellow-600"
-            week17Complete={week17Complete}
-            hasActiveGames={hasActiveGames}
-          />
-          
-          {/* 3rd Place Match */}
-          <FinalsMatch
-            match={thirdPlaceMatch}
-            title="3rd Place Game"
-            icon={<Medal className="h-4 w-4 text-orange-600 dark:text-orange-500" />}
-            highlight1={getHighlightStyle(loser1)}
-            highlight2={getHighlightStyle(loser2)}
-            week17Complete={week17Complete}
-            hasActiveGames={hasActiveGames}
-          />
+        {/* Championship Match */}
+        <FinalsMatch
+          match={finalsMatch}
+          title="Championship Game"
+          icon={<Trophy className="h-5 w-5" />}
+          highlight1={getHighlightStyle(finalist1)}
+          highlight2={getHighlightStyle(finalist2)}
+          week17Complete={week17Complete}
+          hasActiveGames={hasActiveGames}
+        />
+        
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">Also Playing</span>
+          </div>
         </div>
+        
+        {/* 3rd Place Match */}
+        <FinalsMatch
+          match={thirdPlaceMatch}
+          title="3rd Place Game"
+          icon={<Medal className="h-4 w-4 text-orange-600 dark:text-orange-500" />}
+          highlight1={getHighlightStyle(loser1)}
+          highlight2={getHighlightStyle(loser2)}
+          week17Complete={week17Complete}
+          hasActiveGames={hasActiveGames}
+        />
       </div>
     )
   }
@@ -273,19 +279,18 @@ function FinalsMatch({ match, title, icon, highlight1, highlight2, borderClass =
   const showChampion = isChampionshipMatch && week17Complete
   
   return (
-    <Card className={borderClass}>
-      <CardHeader className={`pb-4 ${isChampionshipMatch ? 'bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20' : ''}`}>
-        <CardTitle className="text-center flex items-center justify-center gap-2">
-          {icon && <span className="text-yellow-600 dark:text-yellow-500">{icon}</span>}
+    <div>
+      <div className="text-center mb-4">
+        <div className="flex items-center justify-center gap-2 text-lg font-semibold">
+          {icon && <span className={isChampionshipMatch ? "text-yellow-600 dark:text-yellow-500" : ""}>{icon}</span>}
           {title}
-          {icon && <span className="text-yellow-600 dark:text-yellow-500">{icon}</span>}
-        </CardTitle>
+          {icon && <span className={isChampionshipMatch ? "text-yellow-600 dark:text-yellow-500" : ""}>{icon}</span>}
+        </div>
         {isChampionshipMatch && !week17Complete && !hasActiveGames && (
-          <p className="text-xs text-center text-muted-foreground mt-1">Champion will be crowned after Monday Night Football</p>
+          <p className="text-xs text-muted-foreground mt-1">Champion will be crowned after Monday Night Football</p>
         )}
-      </CardHeader>
-      <CardContent className="pt-2 sm:pt-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
           {/* Team 1 */}
           <div className={`p-1 sm:p-4 rounded-lg border ${highlight1} ${week17Complete && match.winner === match.team1.name ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : ''}`}>
             <div className="text-center mb-4">
@@ -356,8 +361,8 @@ function FinalsMatch({ match, title, icon, highlight1, highlight2, borderClass =
             </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
 

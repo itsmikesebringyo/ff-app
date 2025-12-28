@@ -101,7 +101,7 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
 
           {/* Auto-Refresh Toggle */}
           {(hasActiveGames || pollingInterval) && (
-            <div className="flex flex-col items-center mb-6">
+            <div className="flex flex-col items-center mb-3 sm:mb-6">
               <div className="flex items-center gap-2">
                 {pollingInterval && (
                   <>
@@ -139,7 +139,7 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
               {loading && (
             <div className="text-center py-8 text-muted-foreground">
               <div className="flex flex-col items-center gap-2">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-b-2 border-primary"></div>
                 <span>Loading weekly standings...</span>
               </div>
             </div>
