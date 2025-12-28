@@ -292,7 +292,7 @@ function FinalsMatch({ match, title, icon, highlight1, highlight2, borderClass =
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
           {/* Team 1 */}
-          <div className={`p-1 sm:p-4 rounded-lg border ${highlight1} ${week17Complete && match.winner === match.team1.name ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : ''}`}>
+          <div className={`p-1 sm:p-4 rounded-lg ${highlight1} ${week17Complete && match.winner === match.team1.name ? 'border border-green-500 bg-green-50 dark:bg-green-900/20' : ''}`}>
             <div className="text-center mb-4">
               <div className={`font-semibold ${showChampion && match.winner === match.team1.name ? 'text-yellow-600 dark:text-yellow-500' : ''}`}>
                 {match.team1.name}
@@ -327,7 +327,7 @@ function FinalsMatch({ match, title, icon, highlight1, highlight2, borderClass =
           </div>
           
           {/* Team 2 */}
-          <div className={`p-1 sm:p-4 rounded-lg border ${highlight2} ${week17Complete && match.winner === match.team2.name ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : ''}`}>
+          <div className={`p-1 sm:p-4 rounded-lg ${highlight2} ${week17Complete && match.winner === match.team2.name ? 'border border-green-500 bg-green-50 dark:bg-green-900/20' : ''}`}>
             <div className="text-center mb-4">
               <div className={`font-semibold ${showChampion && match.winner === match.team2.name ? 'text-yellow-600 dark:text-yellow-500' : ''}`}>
                 {match.team2.name}
@@ -370,7 +370,7 @@ function TeamCard({ team, seed, score, projectedScore, isWinner, highlight, isCh
   if (!team) return <div className="flex-1" />
   
   return (
-    <div className={`flex-1 p-1.5 sm:p-4 rounded-lg border ${highlight} ${isWinner ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : ''} ${isChampion ? 'ring-2 ring-yellow-500' : ''}`}>
+    <div className={`flex-1 p-1.5 sm:p-4 rounded-lg ${highlight} ${isWinner ? 'border border-green-500 bg-green-50 dark:bg-green-900/20' : ''} ${isChampion ? 'ring-2 ring-yellow-500' : ''}`}>
       <div className="text-center space-y-1">
         {seed && (
           <div className="text-xs text-muted-foreground">Seed #{seed}</div>
