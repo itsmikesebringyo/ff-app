@@ -18,19 +18,8 @@ import WeeklyStandingsChart from './WeeklyStandingsChart'
 import { useAvailableWeeks, useWeeklyStandings } from '../hooks/useWeeklyStandings'
 import { useActiveGameTime } from '../hooks/useActiveGameTime'
 import { useCurrentWeek } from '../hooks/useCurrentWeek'
-import { useScoreAnimation, useTeamScoreAnimation } from '../hooks/useScoreAnimation'
+import { useTeamScoreAnimation } from '../hooks/useScoreAnimation'
 
-// Component for animated player scores
-function AnimatedPlayerScore({ playerId, points, projectedPoints }) {
-  const { animationClasses } = useScoreAnimation(points, playerId)
-  
-  return (
-    <div className={`text-xs font-medium ${animationClasses} rounded px-1`}>
-      {parseFloat(points || 0).toFixed(2)}
-      <span className="text-gray-400">/{parseFloat(projectedPoints || 0).toFixed(1)}</span>
-    </div>
-  )
-}
 
 // Component for animated team total scores
 function AnimatedTeamScore({ teamId, points, projectedTotal }) {
@@ -208,42 +197,52 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
                       <div className="bg-muted rounded-lg p-2 sm:p-4">
                         {team.starters && team.starters.length > 0 ? (
                           <>
-                            {/* Starters Grid */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 border-b pb-2 mb-2">
+                            {/* Starters List */}
+                            <div className="space-y-1 border-b pb-2 mb-2">
                               {team.starters.map((player, index) => (
-                                <div key={index} className="flex justify-between items-center py-1">
-                                  <span className="text-xs">
-                                    <span className="font-medium text-muted-foreground w-8 inline-block">
-                                      {player.lineup_position}
-                                    </span>
-                                    {player.player}
-                                  </span>
-                                  <AnimatedPlayerScore 
-                                    playerId={player.player_id || `${team.id}-${index}`}
-                                    points={player.points}
-                                    projectedPoints={player.projected_points}
-                                  />
+                                <div key={index} className="py-1">
+                                  <div className="flex justify-between items-center text-xs sm:text-sm">
+                                    <div className="flex items-center">
+                                      <span className="font-medium text-muted-foreground w-8 sm:w-10 inline-block">
+                                        {player.lineup_position}
+                                      </span>
+                                      <span>{player.player}</span>
+                                    </div>
+                                    <div className="font-medium">
+                                      {parseFloat(player.points || 0).toFixed(2)}
+                                    </div>
+                                  </div>
+                                  <div className="flex justify-between items-center text-xs sm:text-sm text-muted-foreground ml-8 sm:ml-10">
+                                    <span>{player.team}</span>
+                                    <span>{parseFloat(player.projected_points || 0).toFixed(1)}</span>
+                                  </div>
                                 </div>
                               ))}
                             </div>
                             
-                            {/* Bench Players Grid */}
+                            {/* Bench Players List */}
                             {team.benchPlayers && team.benchPlayers.length > 0 && (
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                              <div className="space-y-1">
                                 {team.benchPlayers.map((player, index) => {
                                   const actualPoints = parseFloat(player.points || 0)
                                   const hasPlayed = actualPoints > 0
                                   
                                   return (
-                                    <div key={`bench-${index}`} className="flex justify-between items-center py-1 opacity-75">
-                                      <span className="text-xs">
-                                        <span className="font-medium text-muted-foreground w-8 inline-block">
-                                          {player.position}
-                                        </span>
-                                        {player.player}
-                                      </span>
-                                      <div className="text-xs text-muted-foreground">
-                                        {hasPlayed ? actualPoints.toFixed(2) : '--'}/{parseFloat(player.projected_points || 0).toFixed(1)}
+                                    <div key={`bench-${index}`} className="py-1 opacity-75">
+                                      <div className="flex justify-between items-center text-xs sm:text-sm">
+                                        <div className="flex items-center">
+                                          <span className="font-medium text-muted-foreground w-8 sm:w-10 inline-block">
+                                            {player.position}
+                                          </span>
+                                          <span>{player.player}</span>
+                                        </div>
+                                        <div className="text-muted-foreground">
+                                          {hasPlayed ? actualPoints.toFixed(2) : '--'}
+                                        </div>
+                                      </div>
+                                      <div className="flex justify-between items-center text-xs sm:text-sm text-muted-foreground ml-8 sm:ml-10">
+                                        <span>{player.team}</span>
+                                        <span>{parseFloat(player.projected_points || 0).toFixed(1)}</span>
                                       </div>
                                     </div>
                                   )

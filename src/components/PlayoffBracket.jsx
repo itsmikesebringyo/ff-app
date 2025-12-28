@@ -3,23 +3,12 @@ import { Trophy, Medal } from "lucide-react"
 import { useWeeklyStandings } from '../hooks/useWeeklyStandings'
 import { useOverallStandings } from '../hooks/useOverallStandings'
 import { useActiveGameTime } from '../hooks/useActiveGameTime'
-import { useScoreAnimation, useTeamScoreAnimation } from '../hooks/useScoreAnimation'
+import { useTeamScoreAnimation } from '../hooks/useScoreAnimation'
 import { useSleeperPlayers } from '../hooks/useSleeper'
 
-// Component for animated player scores in playoffs
-function AnimatedPlayoffPlayerScore({ playerId, points, projectedPoints }) {
-  const { animationClasses } = useScoreAnimation(points, playerId)
-  
-  return (
-    <div className={`font-medium ${animationClasses} rounded px-1`}>
-      {parseFloat(points || 0).toFixed(1)}
-      <span className="text-gray-400">{parseFloat(projectedPoints || 0).toFixed(1)}</span>
-    </div>
-  )
-}
 
 // Component for animated team total scores in playoffs
-function AnimatedPlayoffTeamScore({ teamId, points, projectedPoints }) {
+function AnimatedPlayoffTeamScore({ teamId, points }) {
   const { animationClasses } = useTeamScoreAnimation(points, teamId)
   
   return (
@@ -304,7 +293,7 @@ function shortenPlayerName(fullName) {
 }
 
 // Finals match component with rosters
-function FinalsMatch({ match, title, icon, highlight1, highlight2, borderClass = "", week17Complete, hasActiveGames, playersData }) {
+function FinalsMatch({ match, title, icon, highlight1, highlight2, week17Complete, hasActiveGames, playersData }) {
   if (!match || !match.team1 || !match.team2) return null
   
   const isChampionshipMatch = title.includes("Championship")
@@ -324,7 +313,7 @@ function FinalsMatch({ match, title, icon, highlight1, highlight2, borderClass =
       </div>
       
       {/* Team Headers */}
-      <div className="grid grid-cols-12 gap-2 mb-4">
+      <div className="grid grid-cols-12 gap-2 mb-4 p-3 border rounded-lg bg-muted/10">
         <div className={`col-span-5 text-center p-2 rounded-lg ${highlight1} ${week17Complete && match.winner === match.team1.name ? 'border border-green-500 bg-green-50 dark:bg-green-900/20' : ''}`}>
           <div className={`font-semibold text-sm ${showChampion && match.winner === match.team1.name ? 'text-yellow-600 dark:text-yellow-500' : ''}`}>
             {match.team1.name}
@@ -371,7 +360,7 @@ function FinalsMatch({ match, title, icon, highlight1, highlight2, borderClass =
       </div>
       
       {/* Player Matchups */}
-      <div className="space-y-2 text-xs">
+      <div className="space-y-2 text-xs sm:text-sm">
         {match.team1.starters.map((player1, idx) => {
           const player2 = match.team2.starters[idx]
           if (!player2) return null
@@ -386,19 +375,18 @@ function FinalsMatch({ match, title, icon, highlight1, highlight2, borderClass =
           const player2Team = getPlayerTeam(player2.player_id)
           
           return (
-            <div key={idx} className="grid grid-cols-12 gap-2">
+            <div key={idx} className="grid grid-cols-12 gap-1 py-2">
               {/* Team 1 Player */}
-              <div className="col-span-5 flex justify-between items-start">
-                <div className="text-left">
-                  <div>{shortenPlayerName(player1.player)}</div>
-                  <div className="text-xs text-muted-foreground">{player1Team}</div>
+              <div className="col-span-5 px-2">
+                <div className="flex justify-between items-center">
+                  <div className="text-left">{shortenPlayerName(player1.player)}</div>
+                  <div className="font-medium text-right">
+                    {parseFloat(player1.points || 0).toFixed(1)}
+                  </div>
                 </div>
-                <div className="text-right">
-                  <AnimatedPlayoffPlayerScore 
-                    playerId={player1.player_id || `p1-${idx}`}
-                    points={player1.points}
-                    projectedPoints={player1.projected_points}
-                  />
+                <div className="text-xs text-muted-foreground flex justify-between items-center">
+                  <span>{player1Team}</span>
+                  <span>{parseFloat(player1.projected_points || 0).toFixed(1)}</span>
                 </div>
               </div>
               
@@ -408,17 +396,16 @@ function FinalsMatch({ match, title, icon, highlight1, highlight2, borderClass =
               </div>
               
               {/* Team 2 Player */}
-              <div className="col-span-5 flex justify-between items-start">
-                <div className="text-left">
-                  <AnimatedPlayoffPlayerScore 
-                    playerId={player2.player_id || `p2-${idx}`}
-                    points={player2.points}
-                    projectedPoints={player2.projected_points}
-                  />
+              <div className="col-span-5 px-2">
+                <div className="flex justify-between items-center">
+                  <div className="font-medium text-left">
+                    {parseFloat(player2.points || 0).toFixed(1)}
+                  </div>
+                  <div className="text-right">{shortenPlayerName(player2.player)}</div>
                 </div>
-                <div className="text-right">
-                  <div>{shortenPlayerName(player2.player)}</div>
-                  <div className="text-xs text-muted-foreground">{player2Team}</div>
+                <div className="text-xs text-muted-foreground flex justify-between items-center">
+                  <span>{parseFloat(player2.projected_points || 0).toFixed(1)}</span>
+                  <span>{player2Team}</span>
                 </div>
               </div>
             </div>
