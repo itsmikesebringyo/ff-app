@@ -361,7 +361,6 @@ function FinalsMatch({ match, title, icon, highlight1, highlight2, borderClass =
             </div>
           </div>
         </div>
-      </div>
     </div>
   )
 }
