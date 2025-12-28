@@ -1,56 +1,17 @@
 import { useQuery } from '@tanstack/react-query'
-import { apiConfig } from '../config/api'
-import { useSleeperProjections, useSleeperRosters, useSleeperUsers, useSleeperPlayers, useSleeperMatchups, useSleeperNFLState } from './useSleeper'
+import { useSleeperProjections, useSleeperRosters, useSleeperUsers, useSleeperPlayers, useSleeperMatchups } from './useSleeper'
 import { useActiveGameTime } from './useActiveGameTime'
 
-// Hook to discover available weeks
+// Hook to return all weeks 1-16 (no API calls needed)
 export function useAvailableWeeks() {
-  const { data: nflState } = useSleeperNFLState()
-  
   return useQuery({
-    queryKey: ['availableWeeks', nflState?.week],
+    queryKey: ['availableWeeks'],
     queryFn: async () => {
-      try {
-        const currentWeek = nflState?.week || 1
-        
-        // Check which weeks actually have data, starting from current week and going backwards
-        const maxWeeksToCheck = Math.min(currentWeek, 18) // Check up to current week or week 18
-        const availableWeeks = []
-        
-        // Test each week to see if it has data, starting from current week going backwards
-        for (let week = maxWeeksToCheck; week >= 1; week--) {
-          try {
-            const weekResponse = await fetch(`${apiConfig.endpoints.weekly}?week=${week}&season=2025`, {
-              method: 'GET',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-            })
-            
-            if (weekResponse.ok) {
-              const weekData = await weekResponse.json()
-              if (weekData.standings && weekData.standings.length > 0) {
-                availableWeeks.unshift(week) // Add to beginning to maintain ascending order
-              }
-            }
-          } catch (err) {
-            // Week doesn't have data, skip it
-            console.log(`Week ${week} not available:`, err.message)
-          }
-        }
-        
-        // If no weeks found, return at least week 1 as fallback
-        return availableWeeks.length > 0 ? availableWeeks : [1]
-        
-      } catch (error) {
-        console.error('Error checking available weeks:', error)
-        // Fallback to just week 1 if check fails
-        return [1]
-      }
+      // Always return weeks 1-17 (including playoffs)
+      return Array.from({ length: 17 }, (_, i) => i + 1)
     },
-    enabled: !!nflState,
-    staleTime: 1000 * 60 * 10, // 10 minutes
-    gcTime: 1000 * 60 * 30, // 30 minutes
+    staleTime: Infinity, // Never refetch since this is static
+    gcTime: Infinity, // Never garbage collect
   })
 }
 
@@ -100,6 +61,7 @@ export function useWeeklyStandings(week, pollingInterval = null) {
             player_id: playerId,
             player: `${playerData?.first_name || ''} ${playerData?.last_name || ''}`.trim() || playerData?.full_name || 'Unknown Player',
             position: playerData?.position || 'FLEX',
+            team: playerData?.team || '',
             points: actualPoints,
             projected_points: projectedPoints,
             is_starter: isStarter
@@ -166,7 +128,9 @@ export function useWeeklyStandings(week, pollingInterval = null) {
     enabled: !!week && !!rosters && !!users && !!players && !!matchups,
     staleTime: activePollingInterval ? activePollingInterval : 1000 * 60 * 2, // Match polling interval when active, 2 minutes otherwise
     gcTime: 1000 * 60 * 10, // 10 minutes
-    refetchInterval: activePollingInterval
+    refetchInterval: activePollingInterval,
+    retry: 3, // Retry up to 3 times on failure
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
   })
 
 }

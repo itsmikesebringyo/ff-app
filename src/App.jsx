@@ -18,9 +18,11 @@ import { Switch } from "@/components/ui/switch"
 import { Moon, Sun, Menu } from "lucide-react"
 import WeeklyStandings from './components/WeeklyStandings'
 import OverallStandings from './components/OverallStandings'
+import PlayoffBracket from './components/PlayoffBracket'
 import { apiConfig, adminApiCall, clearPollingStatusCache, isPollingActive } from './config/api'
 import { useTeams } from './hooks/useTeams'
 import { useNetworkStatus } from './hooks/useNetworkStatus'
+import { useCurrentWeek } from './hooks/useCurrentWeek'
 import { queryClient } from './lib/query-client'
 
 function App() {
@@ -46,6 +48,9 @@ function App() {
   
   // Network status for mobile connectivity awareness
   const { isOnline, isSlowConnection } = useNetworkStatus()
+  
+  // Get current week info for playoff tab visibility
+  const { currentWeek, isPlayoffWeek } = useCurrentWeek()
   
   // PWA update handling
   const [updateAvailable, setUpdateAvailable] = useState(false)
@@ -360,15 +365,24 @@ function App() {
         </div>
         
         {/* Tabs same width as accordion */}
-          <Tabs defaultValue="weekly" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="weekly">Weekly Standings</TabsTrigger>
-            <TabsTrigger value="overall">Overall Standings</TabsTrigger>
+          <Tabs defaultValue={currentWeek >= 16 ? "playoffs" : "weekly"} className="w-full">
+          <TabsList className={`grid w-full ${currentWeek >= 16 ? 'grid-cols-3' : 'grid-cols-2'}`}>
+            {currentWeek >= 16 && (
+              <TabsTrigger value="playoffs">Playoffs</TabsTrigger>
+            )}
+            <TabsTrigger value="weekly">Weekly</TabsTrigger>
+            <TabsTrigger value="overall">Overall</TabsTrigger>
           </TabsList>
           
           <TabsContent value="weekly" className="mt-6">
             <WeeklyStandings selectedTeam={selectedTeam} onTeamSelect={setSelectedTeam} />
           </TabsContent>
+          
+          {currentWeek >= 16 && (
+            <TabsContent value="playoffs" className="mt-6">
+              <PlayoffBracket week={currentWeek.toString()} selectedTeam={selectedTeam} />
+            </TabsContent>
+          )}
           
           <TabsContent value="overall" className="mt-6">
             <OverallStandings selectedTeam={selectedTeam} onTeamSelect={setSelectedTeam} />
