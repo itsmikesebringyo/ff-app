@@ -18,6 +18,33 @@ import WeeklyStandingsChart from './WeeklyStandingsChart'
 import { useAvailableWeeks, useWeeklyStandings } from '../hooks/useWeeklyStandings'
 import { useActiveGameTime } from '../hooks/useActiveGameTime'
 import { useCurrentWeek } from '../hooks/useCurrentWeek'
+import { useScoreAnimation, useTeamScoreAnimation } from '../hooks/useScoreAnimation'
+
+// Component for animated player scores
+function AnimatedPlayerScore({ playerId, points, projectedPoints }) {
+  const { animationClasses } = useScoreAnimation(points, playerId)
+  
+  return (
+    <div className={`text-xs font-medium ${animationClasses} rounded px-1`}>
+      {parseFloat(points || 0).toFixed(2)}
+      <span className="text-gray-400">/{parseFloat(projectedPoints || 0).toFixed(1)}</span>
+    </div>
+  )
+}
+
+// Component for animated team total scores
+function AnimatedTeamScore({ teamId, points, projectedTotal }) {
+  const { animationClasses } = useTeamScoreAnimation(points, teamId)
+  
+  return (
+    <div className={`font-medium ${animationClasses} rounded px-1`}>
+      <span className="text-primary">{points}</span>
+      {projectedTotal && parseFloat(projectedTotal) > 0 && (
+        <span className="text-xs text-gray-400 ml-1">/{projectedTotal}</span>
+      )}
+    </div>
+  )
+}
 
 export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
   const [openItems, setOpenItems] = useState([])
@@ -43,13 +70,13 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
 
   // Set default week when available weeks are loaded
   useEffect(() => {
-    if (availableWeeks.length > 0 && !selectedWeek) {
+    if (availableWeeks.length > 0) {
       // First, check if calculated current week exists in available weeks
       if (availableWeeks.includes(calculatedCurrentWeek)) {
-        setSelectedWeek(calculatedCurrentWeek.toString())
+        setSelectedWeek(calculatedCurrentWeek)
       } else {
         // Fallback to most recent available week
-        const mostRecentWeek = Math.max(...availableWeeks).toString()
+        const mostRecentWeek = Math.max(...availableWeeks)
         setSelectedWeek(mostRecentWeek)
       }
     }
@@ -70,21 +97,18 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
     }
   }
 
-  // Use only weeks 1-15 for weekly standings (no playoffs)
-  const weeks = availableWeeks.filter(week => week <= 15).map(week => week.toString())
-
   return (
     <div>
       <Card>
         <CardContent className="pt-3 sm:pt-6">
           {/* Week Selector */}
           <div className="flex justify-center mb-4">
-            <Select value={selectedWeek} onValueChange={setSelectedWeek} disabled={loading || weeks.length === 0}>
+            <Select value={selectedWeek} onValueChange={setSelectedWeek} disabled={loading || availableWeeks.length === 0}>
               <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder={loading ? "Loading..." : weeks.length === 0 ? "No weeks" : "Select week"} />
+                <SelectValue placeholder={loading ? "Loading..." : availableWeeks.length === 0 ? "No weeks" : "Select week"} />
               </SelectTrigger>
               <SelectContent>
-                {weeks.map((week) => (
+                {availableWeeks.map((week) => (
                   <SelectItem key={week} value={week}>
                     Week {week}
                   </SelectItem>
@@ -172,12 +196,11 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
                           </div>
                         </div>
                       </div>
-                      <div className="font-medium">
-                        <span className="text-primary">{team.points}</span>
-                        {team.projectedTotal && parseFloat(team.projectedTotal) > 0 && (
-                          <span className="text-xs text-gray-400 ml-1">/{team.projectedTotal}</span>
-                        )}
-                      </div>
+                      <AnimatedTeamScore 
+                        teamId={team.id}
+                        points={team.points}
+                        projectedTotal={team.projectedTotal}
+                      />
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
@@ -195,10 +218,11 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
                                     </span>
                                     {player.player}
                                   </span>
-                                  <div className="text-xs font-medium">
-                                    {parseFloat(player.points || 0).toFixed(2)}
-                                    <span className="text-gray-400">/{parseFloat(player.projected_points || 0).toFixed(1)}</span>
-                                  </div>
+                                  <AnimatedPlayerScore 
+                                    playerId={player.player_id || `${team.id}-${index}`}
+                                    points={player.points}
+                                    projectedPoints={player.projected_points}
+                                  />
                                 </div>
                               ))}
                             </div>

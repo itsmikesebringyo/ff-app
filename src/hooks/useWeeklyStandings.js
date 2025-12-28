@@ -61,6 +61,7 @@ export function useWeeklyStandings(week, pollingInterval = null) {
             player_id: playerId,
             player: `${playerData?.first_name || ''} ${playerData?.last_name || ''}`.trim() || playerData?.full_name || 'Unknown Player',
             position: playerData?.position || 'FLEX',
+            team: playerData?.team || '',
             points: actualPoints,
             projected_points: projectedPoints,
             is_starter: isStarter

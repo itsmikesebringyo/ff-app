@@ -365,12 +365,12 @@ function App() {
         </div>
         
         {/* Tabs same width as accordion */}
-          <Tabs defaultValue="weekly" className="w-full">
+          <Tabs defaultValue={currentWeek >= 16 ? "playoffs" : "weekly"} className="w-full">
           <TabsList className={`grid w-full ${currentWeek >= 16 ? 'grid-cols-3' : 'grid-cols-2'}`}>
-            <TabsTrigger value="weekly">Weekly</TabsTrigger>
             {currentWeek >= 16 && (
               <TabsTrigger value="playoffs">Playoffs</TabsTrigger>
             )}
+            <TabsTrigger value="weekly">Weekly</TabsTrigger>
             <TabsTrigger value="overall">Overall</TabsTrigger>
           </TabsList>
           

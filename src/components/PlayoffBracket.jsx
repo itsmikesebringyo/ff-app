@@ -2,8 +2,32 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Trophy, Medal } from "lucide-react"
 import { useWeeklyStandings } from '../hooks/useWeeklyStandings'
 import { useOverallStandings } from '../hooks/useOverallStandings'
-
 import { useActiveGameTime } from '../hooks/useActiveGameTime'
+import { useScoreAnimation, useTeamScoreAnimation } from '../hooks/useScoreAnimation'
+import { useSleeperPlayers } from '../hooks/useSleeper'
+
+// Component for animated player scores in playoffs
+function AnimatedPlayoffPlayerScore({ playerId, points, projectedPoints }) {
+  const { animationClasses } = useScoreAnimation(points, playerId)
+  
+  return (
+    <div className={`font-medium ${animationClasses} rounded px-1`}>
+      {parseFloat(points || 0).toFixed(1)}
+      <span className="text-gray-400">{parseFloat(projectedPoints || 0).toFixed(1)}</span>
+    </div>
+  )
+}
+
+// Component for animated team total scores in playoffs
+function AnimatedPlayoffTeamScore({ teamId, points, projectedPoints }) {
+  const { animationClasses } = useTeamScoreAnimation(points, teamId)
+  
+  return (
+    <div className={`text-xl font-bold mt-1 ${animationClasses} rounded px-2`}>
+      {points.toFixed(2)}
+    </div>
+  )
+}
 
 export default function PlayoffBracket({ week, selectedTeam }) {
   const isSemiFinals = week === "16"
@@ -42,6 +66,9 @@ export default function PlayoffBracket({ week, selectedTeam }) {
   
   // Get week 16 results for finals bracket (always fetch, even if not finals week)
   const { data: week16Results = [] } = useWeeklyStandings("16")
+  
+  // Get player data for team abbreviations
+  const { data: playersData } = useSleeperPlayers()
   
   // Get top 4 teams for playoffs
   const playoffTeams = overallStandings.slice(0, 4).map((team, index) => ({
@@ -243,6 +270,7 @@ export default function PlayoffBracket({ week, selectedTeam }) {
           highlight2={getHighlightStyle(finalist2)}
           week17Complete={week17Complete}
           hasActiveGames={hasActiveGames}
+          playersData={playersData}
         />
         
         <div className="border-t"></div>
@@ -256,6 +284,7 @@ export default function PlayoffBracket({ week, selectedTeam }) {
           highlight2={getHighlightStyle(loser2)}
           week17Complete={week17Complete}
           hasActiveGames={hasActiveGames}
+          playersData={playersData}
         />
       </div>
     )
@@ -264,8 +293,18 @@ export default function PlayoffBracket({ week, selectedTeam }) {
   return null
 }
 
+// Helper function to shorten player names
+function shortenPlayerName(fullName) {
+  if (!fullName) return 'Unknown'
+  const parts = fullName.trim().split(' ')
+  if (parts.length < 2) return fullName
+  const firstName = parts[0]
+  const lastName = parts[parts.length - 1]
+  return `${firstName.charAt(0)}. ${lastName}`
+}
+
 // Finals match component with rosters
-function FinalsMatch({ match, title, icon, highlight1, highlight2, borderClass = "", week17Complete, hasActiveGames }) {
+function FinalsMatch({ match, title, icon, highlight1, highlight2, borderClass = "", week17Complete, hasActiveGames, playersData }) {
   if (!match || !match.team1 || !match.team2) return null
   
   const isChampionshipMatch = title.includes("Championship")
@@ -283,77 +322,109 @@ function FinalsMatch({ match, title, icon, highlight1, highlight2, borderClass =
           <p className="text-xs text-muted-foreground mt-1">Champion will be crowned after Monday Night Football</p>
         )}
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-          {/* Team 1 */}
-          <div className={`p-1 sm:p-4 rounded-lg ${highlight1} ${week17Complete && match.winner === match.team1.name ? 'border border-green-500 bg-green-50 dark:bg-green-900/20' : ''}`}>
-            <div className="text-center mb-4">
-              <div className={`font-semibold ${showChampion && match.winner === match.team1.name ? 'text-yellow-600 dark:text-yellow-500' : ''}`}>
-                {match.team1.name}
-              </div>
-              <div className="text-2xl font-bold mt-1">
-                {match.team1.points.toFixed(2)}
-                <span className="text-sm text-muted-foreground ml-1">/{match.team1.projectedPoints.toFixed(1)}</span>
-              </div>
-              {showChampion && match.winner === match.team1.name && (
-                <div className="flex items-center justify-center gap-1 text-xs text-yellow-600 dark:text-yellow-500 font-semibold mt-1">
-                  <Trophy className="h-3 w-3" />
-                  CHAMPION
-                </div>
-              )}
-            </div>
-            
-            {/* Roster */}
-            <div className="space-y-1 text-xs">
-              {match.team1.starters.map((player, idx) => (
-                <div key={idx} className="flex justify-between items-center py-0.5">
-                  <span>
-                    <span className="font-medium text-muted-foreground w-8 inline-block">{player.lineup_position}</span>
-                    {player.player}
-                  </span>
-                  <span className="font-medium">
-                    {parseFloat(player.points || 0).toFixed(1)}
-                    <span className="text-gray-400">/{parseFloat(player.projected_points || 0).toFixed(1)}</span>
-                  </span>
-                </div>
-              ))}
-            </div>
+      
+      {/* Team Headers */}
+      <div className="grid grid-cols-12 gap-2 mb-4">
+        <div className={`col-span-5 text-center p-2 rounded-lg ${highlight1} ${week17Complete && match.winner === match.team1.name ? 'border border-green-500 bg-green-50 dark:bg-green-900/20' : ''}`}>
+          <div className={`font-semibold text-sm ${showChampion && match.winner === match.team1.name ? 'text-yellow-600 dark:text-yellow-500' : ''}`}>
+            {match.team1.name}
           </div>
-          
-          {/* Team 2 */}
-          <div className={`p-1 sm:p-4 rounded-lg ${highlight2} ${week17Complete && match.winner === match.team2.name ? 'border border-green-500 bg-green-50 dark:bg-green-900/20' : ''}`}>
-            <div className="text-center mb-4">
-              <div className={`font-semibold ${showChampion && match.winner === match.team2.name ? 'text-yellow-600 dark:text-yellow-500' : ''}`}>
-                {match.team2.name}
-              </div>
-              <div className="text-2xl font-bold mt-1">
-                {match.team2.points.toFixed(2)}
-                <span className="text-sm text-muted-foreground ml-1">/{match.team2.projectedPoints.toFixed(1)}</span>
-              </div>
-              {showChampion && match.winner === match.team2.name && (
-                <div className="flex items-center justify-center gap-1 text-xs text-yellow-600 dark:text-yellow-500 font-semibold mt-1">
-                  <Trophy className="h-3 w-3" />
-                  CHAMPION
-                </div>
-              )}
-            </div>
-            
-            {/* Roster */}
-            <div className="space-y-1 text-xs">
-              {match.team2.starters.map((player, idx) => (
-                <div key={idx} className="flex justify-between items-center py-0.5">
-                  <span>
-                    <span className="font-medium text-muted-foreground w-8 inline-block">{player.lineup_position}</span>
-                    {player.player}
-                  </span>
-                  <span className="font-medium">
-                    {parseFloat(player.points || 0).toFixed(1)}
-                    <span className="text-gray-400">/{parseFloat(player.projected_points || 0).toFixed(1)}</span>
-                  </span>
-                </div>
-              ))}
-            </div>
+          <AnimatedPlayoffTeamScore 
+            teamId={`${match.team1.name}-total`}
+            points={match.team1.points}
+            projectedPoints={match.team1.projectedPoints}
+          />
+          <div className="text-xs text-gray-400">
+            {match.team1.projectedPoints.toFixed(1)}
           </div>
+          {showChampion && match.winner === match.team1.name && (
+            <div className="flex items-center justify-center gap-1 text-xs text-yellow-600 dark:text-yellow-500 font-semibold mt-1">
+              <Trophy className="h-3 w-3" />
+              CHAMPION
+            </div>
+          )}
         </div>
+        
+        <div className="col-span-2 text-center text-xs text-muted-foreground self-center">
+          VS
+        </div>
+        
+        <div className={`col-span-5 text-center p-2 rounded-lg ${highlight2} ${week17Complete && match.winner === match.team2.name ? 'border border-green-500 bg-green-50 dark:bg-green-900/20' : ''}`}>
+          <div className={`font-semibold text-sm ${showChampion && match.winner === match.team2.name ? 'text-yellow-600 dark:text-yellow-500' : ''}`}>
+            {match.team2.name}
+          </div>
+          <AnimatedPlayoffTeamScore 
+            teamId={`${match.team2.name}-total`}
+            points={match.team2.points}
+            projectedPoints={match.team2.projectedPoints}
+          />
+          <div className="text-xs text-gray-400">
+            {match.team2.projectedPoints.toFixed(1)}
+          </div>
+          {showChampion && match.winner === match.team2.name && (
+            <div className="flex items-center justify-center gap-1 text-xs text-yellow-600 dark:text-yellow-500 font-semibold mt-1">
+              <Trophy className="h-3 w-3" />
+              CHAMPION
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Player Matchups */}
+      <div className="space-y-2 text-xs">
+        {match.team1.starters.map((player1, idx) => {
+          const player2 = match.team2.starters[idx]
+          if (!player2) return null
+          
+          // Get team abbreviations from player data
+          const getPlayerTeam = (playerId) => {
+            const playerInfo = playersData?.players?.[playerId]
+            return playerInfo?.team || ''
+          }
+          
+          const player1Team = getPlayerTeam(player1.player_id)
+          const player2Team = getPlayerTeam(player2.player_id)
+          
+          return (
+            <div key={idx} className="grid grid-cols-12 gap-2">
+              {/* Team 1 Player */}
+              <div className="col-span-5 flex justify-between items-start">
+                <div className="text-left">
+                  <div>{shortenPlayerName(player1.player)}</div>
+                  <div className="text-xs text-muted-foreground">{player1Team}</div>
+                </div>
+                <div className="text-right">
+                  <AnimatedPlayoffPlayerScore 
+                    playerId={player1.player_id || `p1-${idx}`}
+                    points={player1.points}
+                    projectedPoints={player1.projected_points}
+                  />
+                </div>
+              </div>
+              
+              {/* Position */}
+              <div className="col-span-2 text-center font-medium text-muted-foreground self-start">
+                {player1.lineup_position}
+              </div>
+              
+              {/* Team 2 Player */}
+              <div className="col-span-5 flex justify-between items-start">
+                <div className="text-left">
+                  <AnimatedPlayoffPlayerScore 
+                    playerId={player2.player_id || `p2-${idx}`}
+                    points={player2.points}
+                    projectedPoints={player2.projected_points}
+                  />
+                </div>
+                <div className="text-right">
+                  <div>{shortenPlayerName(player2.player)}</div>
+                  <div className="text-xs text-muted-foreground">{player2Team}</div>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
