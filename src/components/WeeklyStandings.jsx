@@ -197,13 +197,13 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
                       <div className="bg-muted rounded-lg p-2 sm:p-4">
                         {team.starters && team.starters.length > 0 ? (
                           <>
-                            {/* Starters Grid */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 border-b pb-2 mb-2">
+                            {/* Starters List */}
+                            <div className="space-y-1 border-b pb-2 mb-2">
                               {team.starters.map((player, index) => (
                                 <div key={index} className="py-1">
-                                  <div className="flex justify-between items-center text-xs">
+                                  <div className="flex justify-between items-center text-xs sm:text-sm">
                                     <div className="flex items-center">
-                                      <span className="font-medium text-muted-foreground w-8 inline-block">
+                                      <span className="font-medium text-muted-foreground w-8 sm:w-10 inline-block">
                                         {player.lineup_position}
                                       </span>
                                       <span>{player.player}</span>
@@ -212,7 +212,7 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
                                       {parseFloat(player.points || 0).toFixed(2)}
                                     </div>
                                   </div>
-                                  <div className="flex justify-between items-center text-xs text-muted-foreground ml-8">
+                                  <div className="flex justify-between items-center text-xs sm:text-sm text-muted-foreground ml-8 sm:ml-10">
                                     <span>{player.team}</span>
                                     <span>{parseFloat(player.projected_points || 0).toFixed(1)}</span>
                                   </div>
@@ -220,18 +220,18 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
                               ))}
                             </div>
                             
-                            {/* Bench Players Grid */}
+                            {/* Bench Players List */}
                             {team.benchPlayers && team.benchPlayers.length > 0 && (
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                              <div className="space-y-1">
                                 {team.benchPlayers.map((player, index) => {
                                   const actualPoints = parseFloat(player.points || 0)
                                   const hasPlayed = actualPoints > 0
                                   
                                   return (
                                     <div key={`bench-${index}`} className="py-1 opacity-75">
-                                      <div className="flex justify-between items-center text-xs">
+                                      <div className="flex justify-between items-center text-xs sm:text-sm">
                                         <div className="flex items-center">
-                                          <span className="font-medium text-muted-foreground w-8 inline-block">
+                                          <span className="font-medium text-muted-foreground w-8 sm:w-10 inline-block">
                                             {player.position}
                                           </span>
                                           <span>{player.player}</span>
@@ -240,7 +240,7 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
                                           {hasPlayed ? actualPoints.toFixed(2) : '--'}
                                         </div>
                                       </div>
-                                      <div className="flex justify-between items-center text-xs text-muted-foreground ml-8">
+                                      <div className="flex justify-between items-center text-xs sm:text-sm text-muted-foreground ml-8 sm:ml-10">
                                         <span>{player.team}</span>
                                         <span>{parseFloat(player.projected_points || 0).toFixed(1)}</span>
                                       </div>

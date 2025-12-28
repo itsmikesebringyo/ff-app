@@ -313,7 +313,7 @@ function FinalsMatch({ match, title, icon, highlight1, highlight2, week17Complet
       </div>
       
       {/* Team Headers */}
-      <div className="grid grid-cols-12 gap-2 mb-4">
+      <div className="grid grid-cols-12 gap-2 mb-4 p-3 border rounded-lg bg-muted/10">
         <div className={`col-span-5 text-center p-2 rounded-lg ${highlight1} ${week17Complete && match.winner === match.team1.name ? 'border border-green-500 bg-green-50 dark:bg-green-900/20' : ''}`}>
           <div className={`font-semibold text-sm ${showChampion && match.winner === match.team1.name ? 'text-yellow-600 dark:text-yellow-500' : ''}`}>
             {match.team1.name}
@@ -360,7 +360,7 @@ function FinalsMatch({ match, title, icon, highlight1, highlight2, week17Complet
       </div>
       
       {/* Player Matchups */}
-      <div className="space-y-2 text-xs">
+      <div className="space-y-2 text-xs sm:text-sm">
         {match.team1.starters.map((player1, idx) => {
           const player2 = match.team2.starters[idx]
           if (!player2) return null
@@ -375,9 +375,9 @@ function FinalsMatch({ match, title, icon, highlight1, highlight2, week17Complet
           const player2Team = getPlayerTeam(player2.player_id)
           
           return (
-            <div key={idx} className="grid grid-cols-12 gap-2">
+            <div key={idx} className="grid grid-cols-12 gap-1 py-2">
               {/* Team 1 Player */}
-              <div className="col-span-5">
+              <div className="col-span-5 px-2">
                 <div className="flex justify-between items-center">
                   <div className="text-left">{shortenPlayerName(player1.player)}</div>
                   <div className="font-medium text-right">
@@ -396,7 +396,7 @@ function FinalsMatch({ match, title, icon, highlight1, highlight2, week17Complet
               </div>
               
               {/* Team 2 Player */}
-              <div className="col-span-5">
+              <div className="col-span-5 px-2">
                 <div className="flex justify-between items-center">
                   <div className="font-medium text-left">
                     {parseFloat(player2.points || 0).toFixed(1)}
