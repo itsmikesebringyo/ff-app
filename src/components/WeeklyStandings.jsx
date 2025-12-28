@@ -15,12 +15,17 @@ import {
 } from "@/components/ui/select"
 import { ChevronDown } from "lucide-react"
 import WeeklyStandingsChart from './WeeklyStandingsChart'
+import PlayoffBracket from './PlayoffBracket'
 import { useAvailableWeeks, useWeeklyStandings } from '../hooks/useWeeklyStandings'
 import { useActiveGameTime } from '../hooks/useActiveGameTime'
+import { useCurrentWeek } from '../hooks/useCurrentWeek'
 
 export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
   const [openItems, setOpenItems] = useState([])
   const [selectedWeek, setSelectedWeek] = useState("")
+  
+  // Get current week info
+  const { currentWeek: calculatedCurrentWeek } = useCurrentWeek()
   
   // Check for active game times
   const hasActiveGames = useActiveGameTime(selectedWeek)
@@ -40,10 +45,16 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
   // Set default week when available weeks are loaded
   useEffect(() => {
     if (availableWeeks.length > 0 && !selectedWeek) {
-      const mostRecentWeek = Math.max(...availableWeeks).toString()
-      setSelectedWeek(mostRecentWeek)
+      // First, check if calculated current week exists in available weeks
+      if (availableWeeks.includes(calculatedCurrentWeek)) {
+        setSelectedWeek(calculatedCurrentWeek.toString())
+      } else {
+        // Fallback to most recent available week
+        const mostRecentWeek = Math.max(...availableWeeks).toString()
+        setSelectedWeek(mostRecentWeek)
+      }
     }
-  }, [availableWeeks, selectedWeek])
+  }, [availableWeeks, selectedWeek, calculatedCurrentWeek])
 
   
   const loading = weeksLoading || standingsLoading
@@ -62,6 +73,9 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
 
   // Use only available weeks for dropdown
   const weeks = availableWeeks.map(week => week.toString())
+  
+  // Check if selected week is a playoff week
+  const isPlayoffWeek = selectedWeek === "16" || selectedWeek === "17"
 
   return (
     <div>
@@ -77,6 +91,8 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
                 {weeks.map((week) => (
                   <SelectItem key={week} value={week}>
                     Week {week}
+                    {week === "16" && " 🏆 (Playoffs)"}
+                    {week === "17" && " 🏆 (Championship)"}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -105,17 +121,22 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
             </div>
           )}
 
-          {/* Column Headers */}
-          <div className="flex justify-between items-center py-2 border-b font-medium text-sm text-muted-foreground">
-            <div className="flex items-center gap-2 pl-10">
-              <span>Team</span>
-            </div>
-            <div className="pr-4">
-              <span>Points</span>
-            </div>
-          </div>
+          {/* Show playoff bracket or regular standings */}
+          {isPlayoffWeek ? (
+              <PlayoffBracket week={selectedWeek} selectedTeam={selectedTeam} />
+          ) : (
+            <>
+              {/* Column Headers */}
+              <div className="flex justify-between items-center py-2 border-b font-medium text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 pl-10">
+                  <span>Team</span>
+                </div>
+                <div className="pr-4">
+                  <span>Points</span>
+                </div>
+              </div>
 
-          {loading && (
+              {loading && (
             <div className="text-center py-8 text-muted-foreground">
               <div className="flex flex-col items-center gap-2">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
@@ -229,6 +250,8 @@ export default function WeeklyStandings({ selectedTeam, onTeamSelect }) {
                 )
               })}
             </Accordion>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
